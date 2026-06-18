@@ -13,14 +13,25 @@ import sys
 # Чтобы пример работал при запуске из любой папки.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import sympy as sp
+
 from qmt import constants as C
 from qmt import dynamics, hydrogen, matrix6x6, nodes, sincerity, tunneling
+from qmt import geometry as G
 
 
 def main():
     print("=" * 60)
     print("DIALOG QMT v11.0 — демонстрация фреймворка")
     print("=" * 60)
+
+    print("\n[0] Геометрический фундамент (символьно, точные соотношения)")
+    print(f"  φ² = φ + 1 : {sp.simplify(G.PHI**2 - (G.PHI + 1)) == 0}")
+    print(f"  {'тело':<10}{'V':>3}{'E':>4}{'F':>4}{'Эйлер':>7}  ребро²       R²")
+    for r in G.all_solids():
+        print(f"  {r.name:<10}{r.V:>3}{r.E:>4}{r.F:>4}{r.euler:>7}  "
+              f"{str(r.edge_sq):<12} {r.R_sq}")
+    print(f"  куб ⊂ додекаэдр на сфере R²=3; зеркало 1↔9 = −I; группа куба = {G.b3_order()}")
 
     print("\n[1] Базовые константы")
     print(f"  a·ω = c        : {C.COMPTON_LENGTH * C.ZITTER_FREQ:.4e} м/с")

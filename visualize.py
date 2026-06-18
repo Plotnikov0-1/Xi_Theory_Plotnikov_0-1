@@ -25,6 +25,7 @@ import numpy as np
 
 from qmt import constants as C
 from qmt import dynamics, hydrogen, matrix6x6, sincerity, spectral
+from qmt import geometry as G
 
 FIG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "figures")
 
@@ -161,6 +162,80 @@ def plot_sincerity():
     _save(fig, "6_sincerity.png")
 
 
+def _fcoords(d):
+    """Перевести символьные координаты в float-словарь {узел: (x,y,z)}."""
+    return {k: tuple(float(c) for c in v) for k, v in d.items()}
+
+
+def plot_stella_octangula():
+    """График 7 — минимум: два тетраэдра (звезда) + куб + шар-оболочка."""
+    cube = _fcoords(G.CUBE)
+    fig = plt.figure(figsize=(7.5, 7))
+    ax = fig.add_subplot(111, projection="3d")
+
+    # Шар-оболочка R=√3 (точка касания вершин = 0).
+    u, v = np.mgrid[0:2 * np.pi:24j, 0:np.pi:16j]
+    R = np.sqrt(3)
+    ax.plot_wireframe(R * np.cos(u) * np.sin(v), R * np.sin(u) * np.sin(v),
+                      R * np.cos(v), color="gray", alpha=0.15, lw=0.5)
+
+    # Два тетраэдра (звезда октангула).
+    for tet, col in [(G.TET_A, "#c46849"), (G.TET_B, "#3a7d7b")]:
+        pts = [cube[i] for i in tet]
+        for a, b in itertools_combinations(pts):
+            ax.plot(*zip(a, b), color=col, lw=2)
+
+    # Центр-зеркало (узел 5) и оси-антиподы (сумма 10).
+    ax.scatter([0], [0], [0], color="black", s=40)
+    ax.text(0, 0, 0, "  5 (центр, −I)", fontsize=8)
+    for a, b in G.MIRROR_PAIRS:
+        pa, pb = cube[a], cube[b]
+        ax.plot(*zip(pa, pb), color="#999", ls=":", lw=1)
+
+    # Подписи вершин (число).
+    for n, p in cube.items():
+        ax.scatter(*p, color="black", s=20)
+        ax.text(p[0] * 1.12, p[1] * 1.12, p[2] * 1.12, str(n), fontsize=9)
+
+    ax.set_title("Минимум: два тетраэдра (stella octangula)\nв шаре-оболочке √3; центр-5 = зеркало −I")
+    ax.set_box_aspect((1, 1, 1))
+    _save(fig, "7_stella_octangula.png")
+
+
+def plot_platonic_bridge():
+    """График 8 — мост φ: куб (8) ⊂ додекаэдр (20) на одной сфере √3."""
+    cube = _fcoords(G.CUBE)
+    dod = [tuple(float(c) for c in v) for v in G.dodecahedron_vertices()]
+    fig = plt.figure(figsize=(7.5, 7))
+    ax = fig.add_subplot(111, projection="3d")
+
+    # Все 20 вершин додекаэдра.
+    dx = [p[0] for p in dod]; dy = [p[1] for p in dod]; dz = [p[2] for p in dod]
+    ax.scatter(dx, dy, dz, color="#c46849", s=18, label="додекаэдр (20)")
+
+    # Куб внутри — рёбра (различие в одной координате).
+    pts = list(cube.values())
+    for i in range(len(pts)):
+        for j in range(i + 1, len(pts)):
+            diff = sum(1 for k in range(3) if abs(pts[i][k] - pts[j][k]) > 1e-9)
+            same = sum(1 for k in range(3) if abs(pts[i][k] - pts[j][k]) < 1e-9)
+            if diff == 1 and same == 2:
+                ax.plot(*zip(pts[i], pts[j]), color="#3a7d7b", lw=1.8)
+    ax.scatter([p[0] for p in pts], [p[1] for p in pts], [p[2] for p in pts],
+               color="#3a7d7b", s=30, label="куб (8)")
+
+    ax.set_title("Мост φ: куб ⊂ додекаэдр на одной сфере R²=3\n(+12 золотых точек → пятикратность)")
+    ax.legend(fontsize=8)
+    ax.set_box_aspect((1, 1, 1))
+    _save(fig, "8_platonic_bridge.png")
+
+
+def itertools_combinations(seq):
+    """Все неупорядоченные пары элементов (для рёбер тетраэдра)."""
+    import itertools
+    return itertools.combinations(seq, 2)
+
+
 def main():
     print("Построение графиков DIALOG QMT…")
     plot_spectral_density()
@@ -169,6 +244,8 @@ def main():
     plot_bifurcation()
     plot_matrix6x6()
     plot_sincerity()
+    plot_stella_octangula()
+    plot_platonic_bridge()
     print(f"Готово. Все графики в папке: {FIG_DIR}")
 
 
