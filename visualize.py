@@ -29,6 +29,7 @@ from qmt import geometry as G
 from qmt import bridge as B
 from qmt import flow as F
 from qmt import scaling as Sc
+from qmt import catastrophe as K
 
 FIG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "figures")
 
@@ -397,6 +398,41 @@ def plot_memory_levels():
     _save(fig, "14_memory_levels.png")
 
 
+def plot_cusp_catastrophe():
+    """График 15 — катастрофа сборки = бифуркация модели (φ-аттрактор ↔ нулевой)."""
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(11, 4.5))
+
+    # Левая панель — клин бистабильности в плоскости управления (μ₁, μ₂).
+    mu2 = np.linspace(-1.5, 0.5, 400)
+    edge = np.array([K.cusp_bifurcation_set(m) for m in mu2])
+    a1.plot(edge, mu2, color="#c46849", lw=2)
+    a1.plot(-edge, mu2, color="#c46849", lw=2)
+    a1.fill_betweenx(mu2, -edge, edge, color="#f3ead9", label="бистабильно (2 аттрактора)")
+    a1.set_xlabel("μ₁ (наклон)")
+    a1.set_ylabel("μ₂ (расщепление)")
+    a1.set_title("Катастрофа сборки: клин складок\n4μ₂³ + 27μ₁² = 0")
+    a1.legend(fontsize=8)
+    a1.grid(alpha=0.3)
+
+    # Правая панель — петля гистерезиса: равновесия x* при μ₂=−1.
+    m2 = -1.0
+    mu1s = np.linspace(-0.6, 0.6, 600)
+    for m1 in mu1s:
+        for x in K.cusp_equilibria(m1, m2):
+            a2.plot(m1, x, ".", ms=1.5, color="#3a7d7b")
+    a2.axvline(K.cusp_bifurcation_set(m2), ls=":", color="#c46849", lw=1)
+    a2.axvline(-K.cusp_bifurcation_set(m2), ls=":", color="#c46849", lw=1)
+    a2.set_xlabel("μ₁")
+    a2.set_ylabel("равновесие x*")
+    a2.set_title("Складка-гистерезис (μ₂=−1):\nдве ветви = два аттрактора + скачок")
+    a2.grid(alpha=0.3)
+
+    fig.suptitle("7 катастроф Тома — математика переходов; сборка = бифуркация DIALOG QMT",
+                 y=1.02)
+    fig.subplots_adjust(top=0.82)
+    _save(fig, "15_cusp_catastrophe.png")
+
+
 def main():
     print("Построение графиков DIALOG QMT…")
     plot_spectral_density()
@@ -413,6 +449,7 @@ def main():
     plot_sierpinski()
     plot_synchronization()
     plot_memory_levels()
+    plot_cusp_catastrophe()
     print(f"Готово. Все графики в папке: {FIG_DIR}")
 
 

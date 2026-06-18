@@ -13,6 +13,7 @@ DIALOG QMT — Quantum Memory Transition Theory.
     spectral   — спектральная плотность резервуара J(ω)
     dynamics   — система четырёх уравнений движения, бифуркация
     scaling    — масштабирование: Серпинский, синхронизация, 4 уровня памяти
+    catastrophe— физика переходов: 7 катастроф Тома, Пуанкаре, Паули, CP (Сахаров)
     matrix6x6  — спектральный анализ циркулянтной матрицы (Sum-9, инвариант ритма)
     tunneling  — туннель S6→S7 (WKB и когерентный)
     sincerity  — параметр искренности S = Tr(ρ·Π_φ), теорема монотонности
@@ -22,6 +23,7 @@ from __future__ import annotations
 
 from . import (
     bridge,
+    catastrophe,
     constants,
     dynamics,
     flow,
@@ -43,6 +45,7 @@ __all__ = [
     "symbols",
     "bridge",
     "scaling",
+    "catastrophe",
     "constants",
     "hydrogen",
     "nodes",
