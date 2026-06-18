@@ -398,6 +398,37 @@ def plot_memory_levels():
     _save(fig, "14_memory_levels.png")
 
 
+def plot_memory_channels():
+    """График 16 — каналы памяти 0→1/0→4/0→7 (семья 1,4,7) и трещина 7→4→1."""
+    fig, ax = plt.subplots(figsize=(8, 5))
+    reach = Sc.memory_channel_reach()
+    cols = {1: "#c46849", 4: "#9c6b4a", 7: "#3a7d7b"}
+    # Три канала как вложенные дуги от 0 к узлам 1,4,7 с подписью охвата.
+    for i, (anchor, r) in enumerate(reach.items()):
+        y = i
+        ax.plot([0, anchor], [y, y], color=cols[anchor], lw=3)
+        ax.scatter([0, anchor], [y, y], color=cols[anchor], s=60, zorder=5)
+        ax.text(-0.3, y, "0", ha="right", va="center", fontsize=11)
+        ax.text(anchor + 0.2, y, str(anchor), ha="left", va="center", fontsize=11)
+        ax.text(anchor / 2, y + 0.14, f"охват {r} ур.", ha="center", fontsize=9, color=cols[anchor])
+    # Трещина 7→4→1 (спуск шагом −3).
+    cp = Sc.crack_path()
+    for a, b in zip(cp, cp[1:]):
+        ya = list(reach).index(a)
+        yb = list(reach).index(b)
+        ax.annotate("", (b, yb), (a, ya),
+                    arrowprops=dict(arrowstyle="->", color="black", lw=1.6, ls="--"))
+    ax.text(4, 1.0, "трещина 7→4→1\n(знание → любовь)", ha="center", fontsize=8.5, style="italic")
+    ax.text(3.5, -0.7, f"семья 1,4,7 ≡ 1 (mod 3) · выход за эго: XL = {Sc.EGO_EXIT_XL}",
+            ha="center", fontsize=9, color="#5e5d59")
+    ax.set_yticks([])
+    ax.set_xlim(-1, 8)
+    ax.set_ylim(-1, 2.6)
+    ax.set_title("Каналы памяти 0→1 / 0→4 / 0→7 и трещина 7→4→1")
+    ax.axis("off")
+    _save(fig, "16_memory_channels.png")
+
+
 def plot_cusp_catastrophe():
     """График 15 — катастрофа сборки = бифуркация модели (φ-аттрактор ↔ нулевой)."""
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(11, 4.5))
@@ -449,6 +480,7 @@ def main():
     plot_sierpinski()
     plot_synchronization()
     plot_memory_levels()
+    plot_memory_channels()
     plot_cusp_catastrophe()
     print(f"Готово. Все графики в папке: {FIG_DIR}")
 
