@@ -27,6 +27,7 @@ from qmt import constants as C
 from qmt import dynamics, hydrogen, matrix6x6, sincerity, spectral
 from qmt import geometry as G
 from qmt import bridge as B
+from qmt import flow as F
 
 FIG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "figures")
 
@@ -266,6 +267,86 @@ def plot_phi_bridge():
     _save(fig, "9_phi_bridge.png")
 
 
+def plot_flow_tube():
+    """График 10 — поток/трубка: гладкая кривая (a=5,b=3) на сфере √3, без углов.
+
+    Узлы = пересечения трубки; центр (узел 5/0) — не точка, а малая вложенная
+    геометрия со смещением δ (CP-нарушение + ψ(0)≠0).
+    """
+    a, b = F.winding_numbers()
+    x, y, z = F.curve_on_sphere(a, b, n=3000)
+    fig = plt.figure(figsize=(7.5, 7))
+    ax = fig.add_subplot(111, projection="3d")
+
+    # Сфера-оболочка √3.
+    u, v = np.mgrid[0:2 * np.pi:24j, 0:np.pi:16j]
+    R = F.SHELL_R
+    ax.plot_wireframe(R * np.cos(u) * np.sin(v), R * np.sin(u) * np.sin(v),
+                      R * np.cos(v), color="gray", alpha=0.12, lw=0.5)
+
+    # Сама трубка (гладкая, без углов).
+    ax.plot(x, y, z, color="#c46849", lw=1.3)
+
+    # Центр со смещением δ — вложенный малый тетраэдр.
+    cg = F.center_geometry(delta=0.15, scale=0.18)  # δ увеличено для наглядности
+    tet = F.nested_tetrahedron(cg)
+    for i in range(4):
+        for j in range(i + 1, 4):
+            ax.plot(*zip(tet[i], tet[j]), color="#3a7d7b", lw=1.6)
+    ax.scatter(*cg.offset, color="black", s=30)
+    ax.text(*cg.offset, "  центр-5 (δ≠0, ψ(0)≠0)", fontsize=8)
+
+    ax.set_title("Поток/трубка: шаблон-направление (a=5,b=3) на сфере √3\n"
+                 "углов нет; центр — вложенная геометрия со смещением")
+    ax.set_box_aspect((1, 1, 1))
+    _save(fig, "10_flow_tube.png")
+
+
+def plot_triskelion():
+    """График 11 — трискелион: 2D-проекция динамики (куб вдоль оси 1↔9).
+
+    Центр = узлы 1,9 (Горгона: память→камень = декогеренция). 6 узлов = круг-0
+    (колени на оболочке). C₃ = три ноги (две тройки = два тетраэдра). Крылья = CP.
+    """
+    coords, center, ring = F.triskelion_projection((1, 9))
+    arms = F.c3_arms((1, 9))
+    fig, ax = plt.subplots(figsize=(7, 7))
+    Rr = float(np.hypot(*coords[ring[0]]))
+
+    # Внешний круг = 0 (оболочка); колени узлов лежат на нём.
+    circ = plt.Circle((0, 0), Rr, fill=False, color="gray", lw=1.5, ls="--")
+    ax.add_patch(circ)
+
+    # Две тройки C₃ (два тетраэдра = два направления вращения) — «ноги».
+    cols = ["#c46849", "#3a7d7b"]
+    for arm, col in zip(arms, cols):
+        pts = [coords[n] for n in arm] + [coords[arm[0]]]
+        xs, ys = zip(*pts)
+        ax.plot(xs, ys, color=col, lw=2.2)
+        # «Нога» от центра к каждому узлу (с изгибом в колене на круге).
+        for n in arm:
+            ax.annotate("", coords[n], (0, 0),
+                        arrowprops=dict(arrowstyle="-", color=col, lw=1.4, alpha=0.7))
+
+    # Узлы кольца.
+    for n in ring:
+        ax.scatter(*coords[n], color="black", s=40, zorder=5)
+        ax.text(coords[n][0] * 1.12, coords[n][1] * 1.12, str(n), ha="center", fontsize=11)
+
+    # Центр = Горгона (декогеренция, память→камень); узлы 1 и 9 оси-зеркала.
+    ax.scatter([0], [0], color="black", s=120, zorder=6)
+    ax.text(0, -0.28, "Горгона = центр (1,9)\nпамять→камень = декогеренция",
+            ha="center", fontsize=8.5)
+
+    ax.set_title("Трискелион — 2D-проекция динамики (куб вдоль оси 1↔9)\n"
+                 "C₃: три ноги · круг = 0 · крылья = CP-нарушение")
+    ax.set_aspect("equal")
+    ax.set_xlim(-Rr * 1.35, Rr * 1.35)
+    ax.set_ylim(-Rr * 1.35, Rr * 1.35)
+    ax.axis("off")
+    _save(fig, "11_triskelion.png")
+
+
 def main():
     print("Построение графиков DIALOG QMT…")
     plot_spectral_density()
@@ -277,6 +358,8 @@ def main():
     plot_stella_octangula()
     plot_platonic_bridge()
     plot_phi_bridge()
+    plot_flow_tube()
+    plot_triskelion()
     print(f"Готово. Все графики в папке: {FIG_DIR}")
 
 

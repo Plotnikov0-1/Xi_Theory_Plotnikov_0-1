@@ -4,6 +4,8 @@ DIALOG QMT — Quantum Memory Transition Theory.
 
 Подмодули:
     geometry   — геометрический фундамент: минимум → 5 платоновых тел (символьно)
+    flow       — слой «поток/трубки»: шаблон-направление, узлы = пересечения (без углов)
+    symbols    — аллегорический слой: числа/буквы/римские цифры как динамика
     bridge     — мост геометрия ↔ динамика/физика (X*=φ−1, Δ₇=2φ−3, зеркало −I)
     constants  — физические и модельные константы (a·ω=c, φ-аттрактор, τ_bridge…)
     hydrogen   — базис узлов S0–S9 на орбиталях водорода
@@ -21,18 +23,22 @@ from . import (
     bridge,
     constants,
     dynamics,
+    flow,
     geometry,
     hydrogen,
     matrix6x6,
     nodes,
     sincerity,
     spectral,
+    symbols,
     tunneling,
 )
 
 __version__ = "11.0"
 __all__ = [
     "geometry",
+    "flow",
+    "symbols",
     "bridge",
     "constants",
     "hydrogen",
