@@ -28,6 +28,7 @@ from qmt import dynamics, hydrogen, matrix6x6, sincerity, spectral
 from qmt import geometry as G
 from qmt import bridge as B
 from qmt import flow as F
+from qmt import scaling as Sc
 
 FIG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "figures")
 
@@ -347,6 +348,55 @@ def plot_triskelion():
     _save(fig, "11_triskelion.png")
 
 
+def plot_sierpinski():
+    """График 12 — Серпинский-тетраэдр (самоподобие, уровни памяти), D=2."""
+    tets = Sc.sierpinski_tetrahedra(3)
+    fig = plt.figure(figsize=(7.5, 7))
+    ax = fig.add_subplot(111, projection="3d")
+    for tet in tets:
+        for i in range(4):
+            for j in range(i + 1, 4):
+                ax.plot(*zip(tet[i], tet[j]), color="#c46849", lw=0.4, alpha=0.6)
+    ax.set_title(f"Серпинский-тетраэдр (3 уровня вложения, {len(tets)} тетраэдров)\n"
+                 f"D = ln4/ln2 = {Sc.fractal_dimension():.0f} · самоподобие = уровни памяти")
+    ax.set_box_aspect((1, 1, 1))
+    ax.axis("off")
+    _save(fig, "12_sierpinski.png")
+
+
+def plot_synchronization():
+    """График 13 — синхронизация начинается с тетраэдра, затем куб."""
+    t1, r1 = Sc.kuramoto_sync(Sc.adjacency_tetra())
+    t2, r2 = Sc.kuramoto_sync(Sc.adjacency_cube())
+    fig, ax = plt.subplots(figsize=(7.5, 4.5))
+    ax.plot(t1, r1, color="#c46849", lw=2, label=f"тетраэдр K4 → r={r1[-1]:.3f}")
+    ax.plot(t2, r2, color="#3a7d7b", lw=2, label=f"куб (8) → r={r2[-1]:.3f}")
+    ax.axhline(1.0, ls=":", color="gray", lw=1)
+    ax.set_xlabel("время t")
+    ax.set_ylabel("параметр порядка r")
+    ax.set_title("Синхронизация: начинается с тетраэдра, затем куб")
+    ax.legend(fontsize=9)
+    ax.grid(alpha=0.3)
+    _save(fig, "13_synchronization.png")
+
+
+def plot_memory_levels():
+    """График 14 — четыре уровня памяти (3 внутр. + 1 внешн.), всё сразу."""
+    t, E = Sc.integrate_memory()
+    fig, ax = plt.subplots(figsize=(7.5, 4.5))
+    labels = ["уровень 1 (внутр.)", "уровень 2 (внутр.)",
+              "уровень 3 (внутр.)", "уровень 4 (внешний)"]
+    cols = ["#c46849", "#9c6b4a", "#3a7d7b", "#5e5d59"]
+    for k in range(Sc.N_MEMORY_LEVELS):
+        ax.plot(t, E[k], lw=2, color=cols[k], label=labels[k])
+    ax.set_xlabel("время t")
+    ax.set_ylabel("память ε уровня")
+    ax.set_title("Четыре уровня памяти (самоподобные масштабы), связаны одновременно")
+    ax.legend(fontsize=8)
+    ax.grid(alpha=0.3)
+    _save(fig, "14_memory_levels.png")
+
+
 def main():
     print("Построение графиков DIALOG QMT…")
     plot_spectral_density()
@@ -360,6 +410,9 @@ def main():
     plot_phi_bridge()
     plot_flow_tube()
     plot_triskelion()
+    plot_sierpinski()
+    plot_synchronization()
+    plot_memory_levels()
     print(f"Готово. Все графики в папке: {FIG_DIR}")
 
 

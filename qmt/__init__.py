@@ -12,6 +12,7 @@ DIALOG QMT — Quantum Memory Transition Theory.
     nodes      — топология Sum-9, резонансные пары, матрица 7×7
     spectral   — спектральная плотность резервуара J(ω)
     dynamics   — система четырёх уравнений движения, бифуркация
+    scaling    — масштабирование: Серпинский, синхронизация, 4 уровня памяти
     matrix6x6  — спектральный анализ циркулянтной матрицы (Sum-9, инвариант ритма)
     tunneling  — туннель S6→S7 (WKB и когерентный)
     sincerity  — параметр искренности S = Tr(ρ·Π_φ), теорема монотонности
@@ -28,6 +29,7 @@ from . import (
     hydrogen,
     matrix6x6,
     nodes,
+    scaling,
     sincerity,
     spectral,
     symbols,
@@ -40,6 +42,7 @@ __all__ = [
     "flow",
     "symbols",
     "bridge",
+    "scaling",
     "constants",
     "hydrogen",
     "nodes",
