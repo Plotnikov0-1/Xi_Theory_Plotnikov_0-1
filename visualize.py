@@ -32,6 +32,7 @@ from qmt import scaling as Sc
 from qmt import catastrophe as K
 from qmt import phi_operator as PHI
 from qmt import effective_matrix as EM
+from qmt import sync as Y
 
 FIG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "figures")
 
@@ -497,6 +498,58 @@ def plot_phi_operator():
     _save(fig, "17_phi_operator_kernel.png")
 
 
+def plot_sync_master():
+    """График 18 — РАБОЧАЯ МОДЕЛЬ: геометрия (цифры, переходы) ↔ спектр водорода."""
+    cube = _fcoords(G.CUBE)
+    cols = {"прямой": "#3a7d7b", "резонанс": "#c46849", "зеркало": "#b03a2e", "запрещён": "#cccccc"}
+    fig = plt.figure(figsize=(13, 6))
+
+    # --- Левая панель: 3D-куб с классифицированными переходами ---
+    ax = fig.add_subplot(121, projection="3d")
+    u, v = np.mgrid[0:2 * np.pi:20j, 0:np.pi:12j]
+    R = np.sqrt(3)
+    ax.plot_wireframe(R * np.cos(u) * np.sin(v), R * np.sin(u) * np.sin(v),
+                      R * np.cos(v), color="gray", alpha=0.1, lw=0.4)
+    for t in Y.all_transitions():
+        pa, pb = cube[t.a], cube[t.b]
+        style = ":" if t.kind == "запрещён" else ("--" if t.kind == "зеркало" else "-")
+        lw = 0.6 if t.kind == "запрещён" else (2.3 if t.kind == "резонанс" else 1.6)
+        ax.plot(*zip(pa, pb), color=cols[t.kind], ls=style, lw=lw,
+                alpha=0.5 if t.kind == "запрещён" else 0.95)
+    for n, p in cube.items():
+        ax.scatter(*p, color="black", s=45, zorder=5)
+        ax.text(p[0] * 1.15, p[1] * 1.15, p[2] * 1.15, str(n), fontsize=12, weight="bold")
+    ax.scatter([0], [0], [0], color="black", s=120)
+    ax.text(0, 0, 0, "  5", fontsize=11, weight="bold")
+    ax.set_title("Геометрия: цифры на вершинах · 5=центр · 0=оболочка √3\n"
+                 "переходы: прямой · резонанс(сумма-9) · зеркало(сумма-10) · запрещён")
+    ax.set_box_aspect((1, 1, 1))
+    ax.axis("off")
+
+    # --- Правая панель: спектр водорода (разрешённые переходы как линии) ---
+    a2 = fig.add_subplot(122)
+    for t in Y.allowed_transitions():
+        a2.vlines(t.wavelength_nm, 0, 1, color=cols[t.kind], lw=2)
+        a2.text(t.wavelength_nm, 1.02 + 0.06 * ((t.a + t.b) % 3), f"{t.a}-{t.b}",
+                ha="center", fontsize=7.5, rotation=90, color=cols[t.kind])
+    a2.set_xscale("log")
+    a2.set_xlim(80, 40000)
+    a2.set_ylim(0, 1.4)
+    a2.set_yticks([])
+    a2.set_xlabel("длина волны λ, нм (лог)")
+    a2.set_title("Синхронизация с водородом: разрешённые переходы =\n"
+                 "реальные линии (1-2=Лайман α 121нм, 2-7=397нм, 3-7=1005нм)")
+    from matplotlib.lines import Line2D
+    legend = [Line2D([0], [0], color=cols[k], lw=2, label=k)
+              for k in ("прямой", "резонанс", "зеркало")]
+    a2.legend(handles=legend, fontsize=8, loc="upper right")
+    a2.grid(alpha=0.3, axis="x")
+
+    fig.suptitle("РАБОЧАЯ МОДЕЛЬ DIALOG QMT: геометрия ↔ квантовая динамика водорода", y=1.0)
+    fig.subplots_adjust(top=0.86)
+    _save(fig, "18_working_model.png")
+
+
 def main():
     print("Построение графиков DIALOG QMT…")
     plot_spectral_density()
@@ -516,6 +569,7 @@ def main():
     plot_memory_channels()
     plot_cusp_catastrophe()
     plot_phi_operator()
+    plot_sync_master()
     print(f"Готово. Все графики в папке: {FIG_DIR}")
 
 

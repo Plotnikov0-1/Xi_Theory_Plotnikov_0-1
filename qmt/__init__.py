@@ -39,12 +39,14 @@ from . import (
     sincerity,
     spectral,
     symbols,
+    sync,
     tunneling,
 )
 
 __version__ = "12.0"
 __all__ = [
     "geometry",
+    "sync",
     "flow",
     "symbols",
     "bridge",
