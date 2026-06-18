@@ -26,6 +26,7 @@ import numpy as np
 from qmt import constants as C
 from qmt import dynamics, hydrogen, matrix6x6, sincerity, spectral
 from qmt import geometry as G
+from qmt import bridge as B
 
 FIG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "figures")
 
@@ -236,6 +237,35 @@ def itertools_combinations(seq):
     return itertools.combinations(seq, 2)
 
 
+def plot_phi_bridge():
+    """График 9 — φ через слои: одно соотношение в геометрии, аттракторе, туннеле, водороде."""
+    fig, ax = plt.subplots(figsize=(9, 5))
+    ax.axis("off")
+    phi = float(B.PHI)
+    layers = [
+        ("ГЕОМЕТРИЯ", "куб → додекаэдр / икосаэдр\nмост через φ = %.4f" % phi),
+        ("ДИНАМИКА", "φ-аттрактор\nX* = φ−1 = %.4f" % (phi - 1)),
+        ("ТУННЕЛЬ", "барьер Δ₇ = 2φ−3 = 2X*−1\n= %.4f эВ" % float(B.DELTA_7)),
+        ("ВОДОРОД", "радиусы Фибоначчи\nr ratio → φ² = %.3f" % (phi**2)),
+    ]
+    x = np.linspace(0.08, 0.92, len(layers))
+    for i, (title, body) in enumerate(layers):
+        ax.add_patch(plt.Rectangle((x[i] - 0.1, 0.35), 0.2, 0.3,
+                                   fc="#f3ead9", ec="#c46849", lw=2))
+        ax.text(x[i], 0.585, title, ha="center", fontsize=11, weight="bold", color="#5e5d59")
+        ax.text(x[i], 0.46, body, ha="center", fontsize=9)
+        if i < len(layers) - 1:
+            ax.annotate("", (x[i + 1] - 0.1, 0.5), (x[i] + 0.1, 0.5),
+                        arrowprops=dict(arrowstyle="->", color="#c46849", lw=2))
+    ax.text(0.5, 0.85, "Одно соотношение φ — четыре слоя теории",
+            ha="center", fontsize=13, weight="bold")
+    ax.text(0.5, 0.13, "«Не числа, а соотношения»:  X* = φ−1,  Δ₇ = 2φ−3 = 2·X*−1  (доказано символьно)",
+            ha="center", fontsize=9.5, style="italic", color="#5e5d59")
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    _save(fig, "9_phi_bridge.png")
+
+
 def main():
     print("Построение графиков DIALOG QMT…")
     plot_spectral_density()
@@ -246,6 +276,7 @@ def main():
     plot_sincerity()
     plot_stella_octangula()
     plot_platonic_bridge()
+    plot_phi_bridge()
     print(f"Готово. Все графики в папке: {FIG_DIR}")
 
 

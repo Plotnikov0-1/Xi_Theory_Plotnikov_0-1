@@ -4,6 +4,7 @@ DIALOG QMT — Quantum Memory Transition Theory.
 
 Подмодули:
     geometry   — геометрический фундамент: минимум → 5 платоновых тел (символьно)
+    bridge     — мост геометрия ↔ динамика/физика (X*=φ−1, Δ₇=2φ−3, зеркало −I)
     constants  — физические и модельные константы (a·ω=c, φ-аттрактор, τ_bridge…)
     hydrogen   — базис узлов S0–S9 на орбиталях водорода
     nodes      — топология Sum-9, резонансные пары, матрица 7×7
@@ -17,6 +18,7 @@ DIALOG QMT — Quantum Memory Transition Theory.
 from __future__ import annotations
 
 from . import (
+    bridge,
     constants,
     dynamics,
     geometry,
@@ -31,6 +33,7 @@ from . import (
 __version__ = "11.0"
 __all__ = [
     "geometry",
+    "bridge",
     "constants",
     "hydrogen",
     "nodes",
