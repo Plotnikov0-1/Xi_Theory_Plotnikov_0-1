@@ -30,6 +30,8 @@ from qmt import bridge as B
 from qmt import flow as F
 from qmt import scaling as Sc
 from qmt import catastrophe as K
+from qmt import phi_operator as PHI
+from qmt import effective_matrix as EM
 
 FIG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "figures")
 
@@ -464,6 +466,37 @@ def plot_cusp_catastrophe():
     _save(fig, "15_cusp_catastrophe.png")
 
 
+def plot_phi_operator():
+    """График 17 — φ как оператор: T(x)=1/(1+x) сходится к φ−1; ядро памяти K(t)."""
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(11, 4.5))
+
+    # Левая панель — сходимость итерации T(x) к φ−1 из разных стартов.
+    for x0, col in [(0.05, "#c46849"), (2.5, "#3a7d7b")]:
+        xs = [x0]
+        for _ in range(12):
+            xs.append(PHI.T(xs[-1]))
+        a1.plot(range(len(xs)), xs, "o-", ms=4, color=col, label=f"старт x₀={x0}")
+    a1.axhline(C.X_STAR, ls="--", color="gray", lw=1.2, label=f"φ−1 = {C.X_STAR:.4f}")
+    a1.set_xlabel("итерация n")
+    a1.set_ylabel("xₙ")
+    a1.set_title("φ-оператор T(x)=1/(1+x) → φ−1\n(2-й независимый вывод φ−1)")
+    a1.legend(fontsize=8)
+    a1.grid(alpha=0.3)
+
+    # Правая панель — модуль ядра памяти |K(t)| из эффективной матрицы.
+    t = np.linspace(0, 40, 400)
+    Kt = np.abs(EM.memory_kernel(t, Omega=1.0, gamma=0.1))
+    a2.plot(t, Kt, color="#c46849", lw=2)
+    a2.set_xlabel("время t")
+    a2.set_ylabel("|K(t)|")
+    a2.set_title("Ядро памяти K(t) из C_eff (канон 2026)\nK(t)=Σ g_k·e^(−(γ+iΩλ_k)t)")
+    a2.grid(alpha=0.3)
+
+    fig.suptitle("Канон 2026: φ-оператор сборки и детерминированное ядро памяти", y=1.02)
+    fig.subplots_adjust(top=0.82)
+    _save(fig, "17_phi_operator_kernel.png")
+
+
 def main():
     print("Построение графиков DIALOG QMT…")
     plot_spectral_density()
@@ -482,6 +515,7 @@ def main():
     plot_memory_levels()
     plot_memory_channels()
     plot_cusp_catastrophe()
+    plot_phi_operator()
     print(f"Готово. Все графики в папке: {FIG_DIR}")
 
 

@@ -7,6 +7,8 @@ DIALOG QMT — Quantum Memory Transition Theory.
     flow       — слой «поток/трубки»: шаблон-направление, узлы = пересечения (без углов)
     symbols    — аллегорический слой: числа/буквы/римские цифры как динамика
     bridge     — мост геометрия ↔ динамика/физика (X*=φ−1, Δ₇=2φ−3, зеркало −I)
+    phi_operator     — φ как оператор сборки T(x)=1/(1+x); 2-й вывод φ−1; лестница Ω₀→ε
+    effective_matrix — канон 2026: C_eff(ε), ядро K(t), закон дыхания ℒ
     constants  — физические и модельные константы (a·ω=c, φ-аттрактор, τ_bridge…)
     hydrogen   — базис узлов S0–S9 на орбиталях водорода
     nodes      — топология Sum-9, резонансные пары, матрица 7×7
@@ -26,11 +28,13 @@ from . import (
     catastrophe,
     constants,
     dynamics,
+    effective_matrix,
     flow,
     geometry,
     hydrogen,
     matrix6x6,
     nodes,
+    phi_operator,
     scaling,
     sincerity,
     spectral,
@@ -38,7 +42,7 @@ from . import (
     tunneling,
 )
 
-__version__ = "11.0"
+__version__ = "12.0"
 __all__ = [
     "geometry",
     "flow",
@@ -46,6 +50,8 @@ __all__ = [
     "bridge",
     "scaling",
     "catastrophe",
+    "phi_operator",
+    "effective_matrix",
     "constants",
     "hydrogen",
     "nodes",
