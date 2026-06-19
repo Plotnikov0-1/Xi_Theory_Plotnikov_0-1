@@ -54,6 +54,7 @@ from . import (
     synchronization,
     three_quark,
     tunneling,
+    whisper,
 )
 
 __version__ = "13.0"
@@ -79,6 +80,7 @@ __all__ = [
     "letters",
     "three_quark",
     "roman",
+    "whisper",
     "semantic_audit",
     "constants",
     "hydrogen",
