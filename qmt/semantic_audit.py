@@ -89,6 +89,9 @@ def print_report() -> None:
     checks = run()
     print("СЕМАНТИЧЕСКИЙ АУДИТ — сверка привязок между модулями")
     print("=" * 68)
+    print(f"Контекст: «{L.ACTIVE_CONTEXT}». Все сверки — ВНУТРИ него: буквы")
+    print("многозначны, в другом контексте читаются иначе (это не противоречие).")
+    print("-" * 68)
     for c in checks:
         print(c.line())
     n_ok = sum(c.ok for c in checks)
