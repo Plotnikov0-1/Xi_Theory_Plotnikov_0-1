@@ -26,14 +26,17 @@ from __future__ import annotations
 from . import (
     bridge,
     catastrophe,
+    coincidence_ledger,
     constants,
     cp_baryogenesis,
+    dimensions,
     dynamics,
     effective_matrix,
     flow,
     geometry,
     hydrogen,
     matrix6x6,
+    memory_sim,
     nodes,
     phi_operator,
     scaling,
@@ -41,13 +44,15 @@ from . import (
     spectral,
     symbols,
     sync,
+    synchronization,
     tunneling,
 )
 
-__version__ = "12.0"
+__version__ = "13.0"
 __all__ = [
     "geometry",
     "sync",
+    "synchronization",
     "flow",
     "symbols",
     "bridge",
@@ -56,6 +61,9 @@ __all__ = [
     "phi_operator",
     "effective_matrix",
     "cp_baryogenesis",
+    "dimensions",
+    "coincidence_ledger",
+    "memory_sim",
     "constants",
     "hydrogen",
     "nodes",
