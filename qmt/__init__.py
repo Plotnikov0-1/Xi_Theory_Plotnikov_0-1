@@ -48,6 +48,7 @@ from . import (
     symbols,
     sync,
     synchronization,
+    three_quark,
     tunneling,
 )
 
@@ -70,6 +71,7 @@ __all__ = [
     "memory_sim",
     "nested_spheres",
     "letters",
+    "three_quark",
     "constants",
     "hydrogen",
     "nodes",
