@@ -83,14 +83,40 @@ def outer_dodecahedron(seat: str = "mid") -> sp.Expr:
     return sp.simplify(R_CIRC * ratio)        # √3 · (R_circ/R_inner)
 
 
-def report() -> str:
+def vertex_sharing() -> dict:
+    """Кто в кого входит при совпадении вершин куба и додекаэдра.
+
+    Возвращает факты: сколько вершин совпадает и торчат ли остальные за грани
+    куба. Ответ: 8 вершин куба = 8 из 20 вершин додекаэдра; остальные 12
+    (золотые) имеют координату φ>1 ⇒ лежат ВНЕ коробки куба. Значит куб ВНУТРИ
+    додекаэдра, а не наоборот.
+    """
+    from . import geometry as G
+    cube = [sp.Matrix(v) for v in G.CUBE.values()]
+    golden = [sp.Matrix(v) for v in G._golden_vertices()]
+    shared = sum(1 for v in (G.dodecahedron_vertices())
+                 if any(sp.simplify((v - w).norm()) == 0 for w in cube))
+    outside = sum(1 for v in golden if max(abs(c) for c in v) > 1)
+    return {
+        "совпадает вершин": shared,                 # 8
+        "золотых вне куба": outside,                 # 12
+        "куб внутри додекаэдра": outside == 12 and shared == 8,
+    }
+
+
+
     s = model_shells()
     c, m, i = s.numeric()
     out_in = outer_dodecahedron("in")
     out_mid = outer_dodecahedron("mid")
+    vs = vertex_sharing()
     lines = [
         "ВЛОЖЕННЫЕ СФЕРЫ: куб ↔ додекаэдр",
         "=" * 60,
+        "Совпадение вершин: 8 вершин куба = 8 из 20 вершин додекаэдра;",
+        f"остальные 12 (золотые) торчат за грани куба (φ>1) → {vs['золотых вне куба']}/12.",
+        "Значит КУБ ВНУТРИ додекаэдра, а додекаэдр снаружи (не наоборот).",
+        "",
         "По умолчанию (модель): куб и додекаэдр на ОДНОМ шаре √3.",
         f"  R_circ (вершины)       = √3 ≈ {c:.4f}   (общий с кубом)",
         f"  R_mid  (середины рёбер)= φ  ≈ {m:.4f}   [✓ ровно золотое сечение]",
