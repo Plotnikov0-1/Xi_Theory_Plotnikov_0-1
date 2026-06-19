@@ -33,6 +33,7 @@ from qmt import catastrophe as K
 from qmt import phi_operator as PHI
 from qmt import effective_matrix as EM
 from qmt import sync as Y
+from qmt import cp_baryogenesis as CP
 
 FIG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "figures")
 
@@ -550,6 +551,50 @@ def plot_sync_master():
     _save(fig, "18_working_model.png")
 
 
+def plot_cp_baryogenesis():
+    """График 19 — CP-нарушение из геометрии: точность и самоподобная лестница."""
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(11.5, 4.6))
+
+    # Левая панель — точность совпадения с наблюдениями (3 результата).
+    eta = CP.baryon_asymmetry()
+    acc = [
+        ("η_B (барион. асимм.)", CP.accuracy(eta, CP.ETA_B_OBS) * 100),
+        ("отношение каналов", CP.channel_ratio_observed() / CP.CHANNEL_RATIO_DIALOG * 100),
+        ("самоподобие A·G²≈A³", (1 - CP.self_similarity().deviation) * 100),
+    ]
+    names = [a[0] for a in acc]
+    vals = [a[1] for a in acc]
+    bars = a1.barh(names, vals, color=["#c46849", "#9c6b4a", "#3a7d7b"])
+    for b, v in zip(bars, vals):
+        a1.text(v - 6, b.get_y() + b.get_height() / 2, f"{v:.1f}%",
+                va="center", ha="right", color="white", fontsize=10, weight="bold")
+    a1.set_xlim(0, 100)
+    a1.set_xlabel("точность совпадения с наблюдением, %")
+    a1.set_title("CP из геометрии vs эксперимент (LHCb / CMB)\nбез подгонки параметров")
+    a1.axvline(90, ls=":", color="gray", lw=1)
+    a1.grid(alpha=0.3, axis="x")
+
+    # Правая панель — самоподобная лестница G → A_glob → A_loc.
+    G = CP.structural_corridor_G() * 100
+    levels = [("G (геометрия)", G, "#3a7d7b"),
+              ("A_global (LHCb)", CP.A_GLOBAL_OBS * 100, "#9c6b4a"),
+              ("A_local (LHCb)", CP.A_LOCAL_OBS * 100, "#c46849")]
+    for i, (name, val, col) in enumerate(levels):
+        a2.scatter([i], [val], s=160, color=col, zorder=5)
+        a2.text(i, val + 0.3, f"{name}\n{val:.2f}%", ha="center", fontsize=8.5)
+    a2.plot([0, 1, 2], [l[1] for l in levels], color="gray", lw=1.2, ls="--", zorder=1)
+    a2.set_xticks([])
+    a2.set_ylim(0, 7)
+    a2.set_ylabel("CP-асимметрия, %")
+    a2.set_title("Самоподобный рост CP: A_loc·G² ≈ A_glob³\n"
+                 "каждый уровень = предыдущий × R≈1.47")
+    a2.grid(alpha=0.3, axis="y")
+
+    fig.suptitle("CP-нарушение из геометрии DIALOG: η_B = π·J·(φ−1)·T_EW/Δ₇ → 8.23·10⁻¹¹", y=1.02)
+    fig.subplots_adjust(top=0.82)
+    _save(fig, "19_cp_baryogenesis.png")
+
+
 def main():
     print("Построение графиков DIALOG QMT…")
     plot_spectral_density()
@@ -570,6 +615,7 @@ def main():
     plot_cusp_catastrophe()
     plot_phi_operator()
     plot_sync_master()
+    plot_cp_baryogenesis()
     print(f"Готово. Все графики в папке: {FIG_DIR}")
 
 
