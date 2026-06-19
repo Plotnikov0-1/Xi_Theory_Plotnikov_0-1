@@ -104,7 +104,7 @@ def vertex_sharing() -> dict:
     }
 
 
-
+def report() -> str:
     s = model_shells()
     c, m, i = s.numeric()
     out_in = outer_dodecahedron("in")
