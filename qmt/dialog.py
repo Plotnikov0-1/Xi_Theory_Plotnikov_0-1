@@ -89,7 +89,9 @@ class DialogCore:
     aspects_real: bool = False              # аспекты — проекции
     relation_real: bool = True              # реален диалог
     generative: bool = True                 # диалог рождает миры (детей)
-    exact_combo_known: bool = False         # точная единая комбинация — открыта
+    # Предложенная единая константа: Ω_D=(φ−1)·e^{i·2π/φ²} (см. dialog_constant):
+    # модуль=φ−1 (расстояние), фаза=золотой угол (π), e — носитель. φπ-часть точна.
+    exact_combo_known: bool = True
 
 
 def core() -> DialogCore:
