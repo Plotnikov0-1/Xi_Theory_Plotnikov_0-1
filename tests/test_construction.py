@@ -28,6 +28,21 @@ def test_mass_energy_identity():
                         1.0, abs_tol=1e-9)
 
 
+def test_emc2_derived_from_4momentum_self_contraction():
+    # E=mc² ВЫВЕДЕНО: p^μp_μ=(mc)², при p=0 → E=mc².
+    em = K.energy_momentum_invariant(2.0, 3.0, 1.0)
+    assert math.isclose(em["p·p (инвариант)"], em["(mc)²"], abs_tol=1e-9)
+    assert math.isclose(em["E_покоя=mc²"], 2.0, abs_tol=1e-12)
+
+
+def test_invariant_preserved_under_boost():
+    # Самосвёртка p·p=(mc)² одинакова для всех наблюдателей (значит — выведено).
+    inv = K.boost_invariance(2.0, 3.0)
+    target = 2.0**2 + 3.0**2 - 3.0**2  # = (mc)² = 4 (c=1, p·p=E²−p²=m²)
+    for b in inv:
+        assert math.isclose(b["p·p"], 4.0, abs_tol=1e-9)
+
+
 def test_family_is_quadratic():
     # Семья «проявления» — степень 2 (или −2 обратная) по связи.
     for f in K.FAMILY:

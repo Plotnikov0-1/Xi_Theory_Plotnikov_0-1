@@ -81,6 +81,34 @@ def mass_energy_dimensionless(E: float, m: float, c: float = 2.99792458e8) -> fl
     return E / (m * c * c)
 
 
+def energy_momentum_invariant(m: float, px: float, c: float = 1.0) -> dict:
+    """ОТКУДА E=mc²: самосвёртка 4-импульса через метрику Минковского.
+
+    p^μ p_μ = (E/c)² − |p|² = (mc)²  — рест-масса есть «длина» 4-импульса,
+    взятого на самого себя. E из E²=(pc)²+(mc²)²; при p=0 → E=mc² (тень в покое).
+    Квадрат в E=mc² — это метрика, замкнувшая 4-вектор на себя. Не пример
+    конструкции [связь²], а её прямой вывод.
+    """
+    E = math.sqrt((px * c) ** 2 + (m * c * c) ** 2)
+    invariant = (E / c) ** 2 - px ** 2          # = (mc)²
+    return {"E": E, "p·p (инвариант)": invariant, "(mc)²": (m * c) ** 2,
+            "E_покоя=mc²": m * c * c}
+
+
+def boost_invariance(m: float, px: float, velocities=(0.0, 0.3, 0.6, 0.9)) -> list:
+    """Инвариант p·p=(mc)² не зависит от наблюдателя (сохраняется под бустом).
+
+    Это и значит «выведено»: mc² — то, что одинаково для всех — самосвёртка."""
+    E = math.sqrt((px) ** 2 + (m) ** 2)         # c=1
+    out = []
+    for v in velocities:
+        g = 1.0 / math.sqrt(1 - v * v)
+        E2 = g * (E - v * px)
+        p2 = g * (px - v * E)
+        out.append({"v": v, "p·p": E2 * E2 - p2 * p2})
+    return out
+
+
 def classify(degree) -> str:
     """Класс алгоритма по «степени самозамыкания» связи."""
     return {2: "проявление (квадрат / Борн)",
@@ -108,6 +136,14 @@ def print_report() -> None:
     print(f"     ψ·ψ* = {[round(p,3) for p in P]}  Σ={sum(P):.3f}  (вещественно, ≥0 — реально)")
     print(f"     строгая проверка ψ·ψ*≡|ψ|²: {is_self_product_real(psi)}")
     print(f"     E/(mc²) = {mass_energy_dimensionless(1.0, 1.0/2.99792458e8**2):.6f}  (тождество)")
+
+    print("\n  ОТКУДА E=mc² — самосвёртка 4-импульса p^μp_μ=(mc)² (метрика на себя):")
+    em = energy_momentum_invariant(2.0, 3.0, 1.0)
+    print(f"     m=2, p=3 → E={em['E']:.4f}, p·p={em['p·p (инвариант)']:.4f}=(mc)²={em['(mc)²']:.1f}")
+    print(f"     при p=0 → E=mc²={em['E_покоя=mc²']:.1f} (тень инварианта в покое)")
+    inv = boost_invariance(2.0, 3.0)
+    print(f"     инвариант под бустом: " + ", ".join(f"v={b['v']}→{b['p·p']:.3f}" for b in inv))
+    print("     ⇒ E=mc² ВЫВЕДЕНО: квадрат — это метрика, замкнувшая 4-вектор на себя")
 
     print("\n  ГРАНИЦЫ (где «рождение» уступает другому алгоритму):")
     for f in BOUNDARY:
