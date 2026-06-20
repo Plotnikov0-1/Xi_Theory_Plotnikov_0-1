@@ -12,7 +12,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from qmt import (dialog, dialog_constant, master_map, three_quark, roman,
-                 whisper, faces)
+                 whisper, faces, spectral_colors)
 
 PHI = (1 + math.sqrt(5)) / 2
 
@@ -90,6 +90,15 @@ def test_whisper_not_weak_but_deaf():
 def test_faces_twelve_colours():
     # 12 граней = 12 красок (двенадцать в 3+7+12).
     assert len(faces.faces()) == 12
+
+
+def test_faces_match_balmer_lines():
+    # Видимые переходы модели совпадают с серией Бальмера:
+    # 2↔3=Hα(656), 2↔4=Hβ(486), 2↔6=Hδ(410).
+    vis = {(d["a"], d["b"]): d["λ_нм"] for d in spectral_colors.model_visible_transitions()}
+    assert math.isclose(vis[(2, 3)], 656.1, abs_tol=0.5)
+    assert math.isclose(vis[(2, 4)], 486.0, abs_tol=0.5)
+    assert math.isclose(vis[(2, 6)], 410.1, abs_tol=0.5)
 
 
 def _run_all():
