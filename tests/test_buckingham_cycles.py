@@ -74,6 +74,47 @@ def test_zeeman_anchor_real():
     assert Cy.MU_B_EV_PER_T > 0
 
 
+def test_cp_needs_three_generations():
+    # CP-нарушение СМ требует ровно 3 поколений: фаз=0 при N<3, =1 при N=3.
+    assert Cy.cp_phases_sm(1)["CP_фазы"] == 0
+    assert Cy.cp_phases_sm(2)["CP_фазы"] == 0
+    assert Cy.cp_phases_sm(3)["CP_фазы"] == 1
+    assert Cy.cp_phases_sm(3)["CP_возможно"]
+    assert not Cy.cp_phases_sm(2)["CP_возможно"]
+
+
+def test_cp_channels_count():
+    # Все каналы CP в спине l = l нечётных мультиполей; триада l=1 → ровно 1.
+    assert Cy.cp_channels(1)["CP_наруш_каналы"] == 1
+    assert Cy.cp_channels(2)["CP_наруш_каналы"] == 2
+    assert Cy.cp_channels(1)["нечётные_мультиполи"] == [1]
+
+
+def test_cp_full_decomposition_odd_is_signal():
+    # Полный CP-сигнал = нечётная часть; чисто чётный спектр → CP=0.
+    sym = Cy.cp_full_decomposition({-1: 5.0, 0: 3.0, 1: 5.0})
+    assert not sym["CP_нарушено"]
+    asym = Cy.cp_full_decomposition({-1: 4.0, 0: 3.0, 1: 5.0})
+    assert asym["CP_нарушено"]
+    assert math.isclose(asym["полный_CP_сигнал"], 1.0, abs_tol=1e-12)
+
+
+# ── Масштабный инвариант (Бакингем) ──────────────────────────────────────────
+def test_scale_invariant_fixed_point():
+    # f(x)=1/(1+x) сходится к φ−1 из любого старта (масштабная инвариантность).
+    target = (math.sqrt(5) - 1) / 2
+    for x0 in (0.1, 2.0, 100.0):
+        assert abs(B.self_similar_fixed_point(x0) - target) < 1e-9
+
+
+def test_convergents_approach_fixed_point():
+    # «Разнообразие форм»: сходящиеся дроби стремятся к φ−1.
+    target = (math.sqrt(5) - 1) / 2
+    forms = B.convergents(15)
+    assert abs(forms[-1][2] - target) < 1e-4
+    assert forms[0] == (1, 2, 0.5)
+
+
 def _run_all():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for fn in fns:

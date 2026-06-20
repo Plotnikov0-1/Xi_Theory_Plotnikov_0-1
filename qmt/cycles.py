@@ -35,6 +35,7 @@ W = np.exp(2j * np.pi / 3)                    # ω = e^{2πi/3}
 MU_B_EV_PER_T = 5.7883818060e-5     # магнетон Бора, эВ/Тл
 EDM_E_BOUND_ECM = 4.1e-30           # верхний предел ЭДМ электрона, e·см (ACME 2018)
 ETA_B = 6.1e-10                     # барионная асимметрия Вселенной (Planck/BBN)
+JARLSKOG_J = 3.08e-5                # инвариант Ярлског — мера CP в СМ (PDG, измерен)
 
 
 def permutation_operator() -> np.ndarray:
@@ -96,6 +97,39 @@ def zeeman_split_eV(B_tesla: float, m: int) -> float:
     return MU_B_EV_PER_T * B_tesla * m
 
 
+def cp_channels(l: int) -> dict:
+    """ВСЕ каналы CP в манифолде спина l: разложение E(m) на чётную (CP-сохр)
+    и нечётную (CP-наруш) части. Нечётных мультиполей ровно l — это все каналы
+    CP-нарушения. Для l=1 (триада m=−1,0,+1) — ровно 1 канал (как 1 фаза в СМ)."""
+    n = 2 * l + 1
+    even = l + 1            # чётные моменты m⁰,m²,… (CP-сохраняющие)
+    odd = l                # нечётные моменты m¹,m³,… (CP-нарушающие каналы)
+    odd_powers = [2 * k + 1 for k in range(odd)]   # m^1, m^3, …
+    return {"состояний": n, "CP_сохр_каналы": even, "CP_наруш_каналы": odd,
+            "нечётные_мультиполи": odd_powers}
+
+
+def cp_phases_sm(N: int) -> dict:
+    """Число физических CP-фаз матрицы CKM для N поколений = (N−1)(N−2)/2
+    (Кобаяши–Маскава, Нобель 2008). Углов смешивания N(N−1)/2.
+    Следствие: CP-нарушение НЕВОЗМОЖНО при N<3 — нужно ровно 3 поколения."""
+    angles = N * (N - 1) // 2
+    phases = (N - 1) * (N - 2) // 2
+    return {"поколений": N, "углы_смешивания": angles, "CP_фазы": phases,
+            "CP_возможно": phases >= 1}
+
+
+def cp_full_decomposition(E_of_m: dict) -> dict:
+    """Полное разложение произвольного спектра E(m) на CP-чётную и CP-нечётную
+    части: E = E_even + E_odd, где E_odd(m) = [E(m)−E(−m)]/2 — ВЕСЬ сигнал CP."""
+    ms = sorted(E_of_m)
+    even = {m: (E_of_m[m] + E_of_m[-m]) / 2 for m in ms}
+    odd = {m: (E_of_m[m] - E_of_m[-m]) / 2 for m in ms}
+    cp_signal = sum(abs(v) for v in odd.values())
+    return {"E_even_CP_сохр": even, "E_odd_CP_наруш": odd,
+            "полный_CP_сигнал": cp_signal, "CP_нарушено": cp_signal > 1e-18}
+
+
 def print_report() -> None:
     print("═" * 74)
     print("  CYCLES: 1-4-7/2-5-8/3-6-9 как оператор · CP = снятие m-вырождения")
@@ -122,6 +156,19 @@ def print_report() -> None:
     print(f"     с наклоном a=0.05: E_m = {[round(v,3) for v in cp['E'].values()]}")
     print(f"        вырождение снято: {cp['вырождение_снято']}, "
           f"зеркало m↔−m нарушено: {cp['CP_нарушено']} (E₊₁−E₋₁={cp['зеркальная_асимметрия'][1]:+.3f})")
+
+    print("\n  ВСЕ КАНАЛЫ CP (полное разложение, не один):")
+    for l in (1, 2, 3):
+        ch = cp_channels(l)
+        print(f"     спин l={l}: {ch['состояний']} уровней → CP-каналов {ch['CP_наруш_каналы']} "
+              f"(нечётные m^{ch['нечётные_мультиполи']})")
+    print("     три 3-цикла (1-4-7/2-5-8/3-6-9) ↔ ТРИ поколения. В Стандартной модели:")
+    for N in (1, 2, 3):
+        p = cp_phases_sm(N)
+        flag = "  ← CP включается!" if N == 3 else "  (CP невозможно)"
+        print(f"        N={N}: CP-фаз = {p['CP_фазы']}{flag}")
+    print(f"     ⇒ CP-нарушение требует ровно 3 поколений (Кобаяши–Маскава, Нобель-2008)")
+    print(f"        мера CP в СМ: инвариант Ярлског J = {JARLSKOG_J:.2e} (измерен, PDG)")
 
     print("\n  ЭКСПЕРИМЕНТАЛЬНЫЕ ЯКОРЯ (честно):")
     print(f"     ✓ линейный наклон = эффект Зеемана: при B=1 Тл, m=+1 → "
