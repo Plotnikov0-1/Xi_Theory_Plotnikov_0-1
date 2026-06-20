@@ -25,10 +25,12 @@ from __future__ import annotations
 
 from . import (
     bridge,
+    buckingham,
     catastrophe,
     coincidence_ledger,
     constants,
     cp_baryogenesis,
+    cycles,
     dephasing,
     dialog,
     dialog_constant,
@@ -75,6 +77,8 @@ __all__ = [
     "phi_operator",
     "effective_matrix",
     "cp_baryogenesis",
+    "buckingham",
+    "cycles",
     "dialog",
     "dialog_constant",
     "faces",

@@ -31,7 +31,7 @@ def test_hydrogen_lines_sub_ppm():
 
 def test_golden_angle_is_only_coincidence():
     # Золотой угол ≈ α⁻¹, но это СОВПАДЕНИЕ (~0.34%), не подтверждение.
-    c = next(c for c in X.all_checks() if "α⁻¹" in c.name)
+    c = next(c for c in X.all_checks() if "Золотой угол" in c.name)
     assert c.verdict == "coincidence"
     assert 0.002 < c.rel_error < 0.01
 
@@ -49,12 +49,19 @@ def test_reduced_mass_used():
     assert abs(X.R_H / X.R_INF - 0.999456) < 1e-5
 
 
+def test_real_137_from_alpha():
+    # Настоящее 137 — из e²/(4πε₀ℏc), не из золотого угла. Совпадает точно.
+    c = next(c for c in X.all_checks() if "e²/(4πε₀ℏc)" in c.name)
+    assert c.verdict == "verify"
+    assert c.ppm < 1.0
+
+
 def test_verdict_counts():
-    # Структура вердиктов стабильна: 14 физ. / 2 совпад. / 2 модель / 1 расхожд.
+    # Структура вердиктов: 16 физ. / 2 совпад. / 4 модель / 1 расхожд.
     v = [c.verdict for c in X.all_checks()]
-    assert v.count("verify") == 14
+    assert v.count("verify") == 16
     assert v.count("coincidence") == 2
-    assert v.count("model") == 2
+    assert v.count("model") == 4
     assert v.count("mismatch") == 1
 
 
