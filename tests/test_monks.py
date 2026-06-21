@@ -36,6 +36,30 @@ def test_specific_exact_pairs():
         assert M.R(a) == b
 
 
+def test_alphabet_same_mirror_structure():
+    # Алфавит А…Щ: 13 зеркальных пар (А↔Щ…) + центр М — та же Z₂-инволюция.
+    am = M.alphabet_mirror()
+    assert am["букв"] == 27
+    assert len(am["пар"]) == 13
+    assert am["центр"] == "М"
+    assert ("А", "Щ") in am["пар"]
+
+
+def test_monk_letters_subset():
+    # Имена монахов используют подмножество алфавита (15 букв).
+    ml = M.monk_letters()
+    assert ml["сколько"] == 15
+    assert set(ml["использовано"]).issubset(set(M.ALPHABET))
+
+
+def test_three_way_same_structure():
+    # Алфавит, монахи, куб — одна структура (инволюция + неподвижная точка).
+    tw = M.three_way_structure()
+    assert "центр М" in tw["алфавит"]
+    assert "ДЕРЕД" in tw["монахи"]
+    assert "центр 5" in tw["куб"]
+
+
 def test_cube_correspondence_structure():
     c = M.cube_correspondence()
     assert c["куб: само-зеркало (центр)"] == 5
