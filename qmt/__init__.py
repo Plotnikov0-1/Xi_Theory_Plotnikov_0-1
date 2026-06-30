@@ -73,6 +73,7 @@ from . import (
     three_quark,
     tunneling,
     vedic,
+    vibration,
     whisper,
 )
 
@@ -115,6 +116,7 @@ __all__ = [
     "relations",
     "roman",
     "vedic",
+    "vibration",
     "whisper",
     "semantic_audit",
     "constants",
