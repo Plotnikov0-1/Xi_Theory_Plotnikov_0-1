@@ -40,6 +40,14 @@ def test_number_cipher_missing_0_and_9():
     assert c["присутствуют"] == [1, 2, 3, 4, 5, 6, 7, 8]
 
 
+def test_central_crack_456():
+    # Сердце числа: 456 = трещина 4/φ : ½ : 1/φ, Op_4=4, палиндром 565.
+    cc = C.central_crack()
+    assert abs(cc["Op_4=T_вх/T_вых"] - 4.0) < 1e-9
+    assert abs(cc["6 → T_вых=1/φ=φ−1 (аттрактор)"] - ((5**0.5 - 1) / 2)) < 1e-9
+    assert cc["палиндром_565"] == "565"
+
+
 def _run_all():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for fn in fns:
@@ -50,11 +58,3 @@ def _run_all():
 
 if __name__ == "__main__":
     _run_all()
-
-
-def test_central_crack_456():
-    # Сердце числа: 456 = трещина 4/φ : ½ : 1/φ, Op_4=4, палиндром 565.
-    cc = C.central_crack()
-    assert abs(cc["Op_4=T_вх/T_вых"] - 4.0) < 1e-9
-    assert abs(cc["6 → T_вых=1/φ=φ−1 (аттрактор)"] - ((5**0.5 - 1) / 2)) < 1e-9
-    assert cc["палиндром_565"] == "565"
