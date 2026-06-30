@@ -48,6 +48,13 @@ def test_central_crack_456():
     assert cc["палиндром_565"] == "565"
 
 
+def test_number_brackets():
+    # [13]=13 осей куба=все проекции; 43-30=13 (низ->верх); [18]=2x9 девятка.
+    b = C.number_brackets()
+    assert b["13_осей"] == 13
+    assert b["проверка"]
+
+
 def _run_all():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for fn in fns:
