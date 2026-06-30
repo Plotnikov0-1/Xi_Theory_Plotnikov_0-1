@@ -70,6 +70,7 @@ from . import (
     synchronization,
     three_quark,
     tunneling,
+    vedic,
     whisper,
 )
 
@@ -109,6 +110,7 @@ __all__ = [
     "letters",
     "three_quark",
     "roman",
+    "vedic",
     "whisper",
     "semantic_audit",
     "constants",
