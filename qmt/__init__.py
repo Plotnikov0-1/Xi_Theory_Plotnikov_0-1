@@ -87,6 +87,7 @@ from . import (
     unified_model,
     universal_transition,
     tunneling,
+    x_law,
     vedic,
     vibration,
     whisper,
@@ -159,5 +160,6 @@ __all__ = [
     "fine_structure_speed",
     "matrix6x6",
     "tunneling",
+    "x_law",
     "sincerity",
 ]
