@@ -27,6 +27,18 @@ def test_d_mirror_center():
 def test_e_universality():
     assert UT.same_form_different_params()
 
+def test_f_metallic_family():
+    assert UT.mirror_is_k0_golden_is_k1()
+    assert math.isclose(UT.metallic_ratio(0), 1.0)       # зеркало
+    assert math.isclose(UT.metallic_ratio(1), UT.PHI)    # золото
+    assert math.isclose(UT.metallic_ratio(2), 1 + math.sqrt(2))  # серебро
+    assert UT.silver_not_golden_at_k2()                  # ★ метка документа ошибочна
+
+def test_g_energy_split():
+    es = UT.energy_split_phi()
+    assert es["=1"]
+    assert math.isclose(es["импульс² φ⁻¹"], UT.PHI1)
+
 def _run_all():
     fns=[v for k,v in sorted(globals().items()) if k.startswith('test_')]
     for fn in fns: fn(); print(f'  OK  {fn.__name__}')
