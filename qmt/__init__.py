@@ -26,6 +26,7 @@ from __future__ import annotations
 from . import (
     bridge,
     buckingham,
+    canon_constants,
     carrier_map,
     catastrophe,
     chemistry,
@@ -106,6 +107,7 @@ __all__ = [
     "transitions",
     "unified_model",
     "universal_transition",
+    "canon_constants",
     "carrier_map",
     "greek_wheel",
     "hydrogen_temperature",
