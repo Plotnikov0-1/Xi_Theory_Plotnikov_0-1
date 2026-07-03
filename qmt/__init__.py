@@ -24,6 +24,7 @@ DIALOG QMT — Quantum Memory Transition Theory.
 from __future__ import annotations
 
 from . import (
+    breathing,
     bridge,
     buckingham,
     canon_constants,
@@ -96,6 +97,7 @@ from . import (
 __version__ = "13.0"
 __all__ = [
     "geometry",
+    "breathing",
     "sync",
     "synchronization",
     "flow",
