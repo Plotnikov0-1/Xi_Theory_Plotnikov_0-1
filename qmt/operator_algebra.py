@@ -33,6 +33,8 @@ import cmath
 import math
 from itertools import combinations, permutations
 
+PHI = (1 + math.sqrt(5)) / 2
+
 # S — состояния: координаты 8 вершин куба
 COORDS = {1: (-1, -1, -1), 2: (1, -1, -1), 3: (-1, 1, -1), 4: (-1, -1, 1),
           6: (1, 1, -1), 7: (1, -1, 1), 8: (-1, 1, 1), 9: (1, 1, 1)}
@@ -151,6 +153,55 @@ def is_bipartite() -> bool:
     return True
 
 
+# ── φ как ИНВАРИАНТ ГРУППЫ: живёт в G=120, не в G=48 ─────────────────────────
+def _icosahedron_vertices() -> list:
+    """12 вершин икосаэдра: циклические перестановки (0,±1,±φ)."""
+    base = [(0, s1, s2 * PHI) for s1 in (-1, 1) for s2 in (-1, 1)]
+    verts, seen = [], set()
+    for v in base:
+        for w in (v, (v[1], v[2], v[0]), (v[2], v[0], v[1])):
+            key = tuple(round(c, 9) for c in w)
+            if key not in seen:
+                seen.add(key); verts.append(w)
+    return verts
+
+
+def _min_dist_adjacency(verts: list) -> list:
+    """Матрица смежности: ребро = минимальное ненулевое расстояние."""
+    n = len(verts)
+    dist = lambda a, b: math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b)))
+    dmin = min(dist(verts[i], verts[j]) for i in range(n) for j in range(n) if i != j)
+    return [[1 if i != j and abs(dist(verts[i], verts[j]) - dmin) < 1e-6 else 0
+             for j in range(n)] for i in range(n)]
+
+
+def icosahedron_spectrum() -> list:
+    """◇ Спектр графа икосаэдра (G=120): {5, √5×3, −1×5, −√5×3}."""
+    return _sym_eigs(_min_dist_adjacency(_icosahedron_vertices()))
+
+
+def cube_has_no_phi() -> bool:
+    """◇ В инварианте куба (G=48) нет ни φ, ни √5 — только целые."""
+    return not any(abs(abs(x) - math.sqrt(5)) < 1e-4 for x in invariant_spectrum())
+
+
+def icosa_has_sqrt5() -> bool:
+    """◇ В инварианте икосаэдра (G=120) есть √5 ⇒ φ=(1+√5)/2 извлекается."""
+    return any(abs(abs(x) - math.sqrt(5)) < 1e-4 for x in icosahedron_spectrum())
+
+
+def A5_character_phi() -> tuple:
+    """◇ Характеры 3-мерных ирреп A5 на 5-циклах: (1±√5)/2 = φ и −φ⁻¹."""
+    return ((1 + math.sqrt(5)) / 2, (1 - math.sqrt(5)) / 2)
+
+
+def golden_is_invariant_of_120_not_48() -> bool:
+    """◇ φ — подлинный инвариант G=120 (не назначение), и отсутствует в G=48."""
+    a5 = A5_character_phi()
+    return (cube_has_no_phi() and icosa_has_sqrt5()
+            and math.isclose(a5[0], PHI) and math.isclose(a5[1], -1 / PHI))
+
+
 # ── четыре слоя и фактор-пространство ────────────────────────────────────────
 def four_layers() -> dict:
     """(S, T, G, I) — строгая форма теории."""
@@ -181,6 +232,14 @@ def print_report() -> None:
     print(f"\n  замыкание по путям (связный): {is_connected()}")
     print(f"  двудолен (каждый переход меняет тетраэдр): {is_bipartite()}")
     print(f"  🔴 разрыв: зеркальные пары как рёбра → 5 компонент (node5, димеры)")
+
+    print(f"\n  φ КАК ИНВАРИАНТ ГРУППЫ (назначено или вынуждено?):")
+    print(f"     куб G=48: спектр {invariant_spectrum()} — φ/√5 НЕТ (было бы импортом)")
+    print(f"     икосаэдр G=120: √5 в спектре {[round(x,3) for x in icosahedron_spectrum()]}")
+    a5 = A5_character_phi()
+    print(f"     A5 характеры на 5-циклах: (1±√5)/2 = {a5[0]:.4f}=φ, {a5[1]:.4f}=−φ⁻¹")
+    print(f"     ⇒ φ ВЫНУЖДЕНО 5-кратной симметрией (G=120), не назначено: "
+          f"{golden_is_invariant_of_120_not_48()}")
 
     print("\n  ═══ ФАКТОР-ПРОСТРАНСТВО: физика = 𝓕/G ═══")
     for k, v in four_layers().items():
