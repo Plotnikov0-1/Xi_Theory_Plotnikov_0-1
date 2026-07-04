@@ -24,6 +24,12 @@ def test_card_lookup_and_modules():
 def test_letter_cards():
     assert {c.symbol for c in C.LETTER_CARDS} == {"А", "Л", "Д", "Х"}
 
+def test_full_alphabet():
+    assert len(C.ALPHABET) == 26
+    assert C.alphabet_tier_counts() == {"○": 24, "✓": 2}
+    assert C.alphabet_real_anchors() == ["Д", "Х"]     # только реальные пороги
+    assert C.alphabet_is_life_cycle()
+
 def test_hydrogen_anchored():
     assert C.cards_are_hydrogen_anchored()
     assert all(C.level_energy(n) < 0 for n in range(1, 8))
