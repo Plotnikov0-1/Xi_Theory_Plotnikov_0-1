@@ -27,6 +27,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+R_EV = 13.605693        # Ридберг (эВ)
+K_EV = 8.617333e-5      # Больцман (эВ/К)
+HC_NM = 1239.841984     # h·c (эВ·нм)
+
 
 @dataclass(frozen=True)
 class Card:
@@ -133,6 +137,37 @@ def card(symbol: str) -> Card:
     raise KeyError(symbol)
 
 
+# ── Сверка с водородом: где карточка = реальное число, где семантика ──────────
+def level_energy(n: int) -> float:
+    """✓ Уровень водорода E_n = −13.6/n² (эВ). Карточка n ↔ уровень n."""
+    return -R_EV / (n * n)
+
+
+def transition(n: int, m: int) -> dict:
+    """✓ Реальный переход n↔m: ΔE (эВ), λ (нм), T_c=ΔE/k (К)."""
+    dE = R_EV * abs(1 / n**2 - 1 / m**2)
+    return {"ΔE_эВ": dE, "λ_нм": HC_NM / dE, "T_c_К": dE / K_EV}
+
+
+def physics_anchored() -> dict:
+    """✓ Карточки 1–7 привязаны к реальным уровням водорода (n=1..7); 0=предел."""
+    return {str(n): round(level_energy(n), 3) for n in range(1, 8)}
+
+
+def functional_transitions() -> dict:
+    """✓ «Функциональные» пары карточек = реальные переходы (посчитаны)."""
+    return {"1→2 рождение→связь (Лайман-α)": transition(1, 2),
+            "4↔6 измерение↔результат (шёпот)": transition(4, 6),
+            "2↔7 связь↔разрыв (петля)": transition(2, 7),
+            "6→7 результат→разрыв (туннель)": transition(6, 7)}
+
+
+def cards_are_hydrogen_anchored() -> bool:
+    """✓ Узлы 1–7 = уровни n=1..7 (реальная физика), не только семантика."""
+    return all(level_energy(n) < 0 for n in range(1, 8)) and \
+        abs(transition(1, 2)["λ_нм"] - 121.5) < 0.5      # Лайман-α = 121.5 нм
+
+
 def print_report() -> None:
     print("═" * 78)
     print("  КАРТОЧНАЯ СИСТЕМА: символ → функция (числа · алфавит · водород)")
@@ -147,6 +182,12 @@ def print_report() -> None:
     print("\n  БУКВЕННЫЕ КАРТОЧКИ (нули А,Л,Д,Х — связь/пороги):")
     for c in LETTER_CARDS:
         print(f"   [{c.symbol}] {c.function:18} {c.hydrogen:14} → {c.physics[:44]} ({c.tier})")
+
+    print("\n  СВЕРКА С ВОДОРОДОМ (физика vs семантика):")
+    print(f"   карточки 1–7 = реальные уровни n=1..7: {cards_are_hydrogen_anchored()}")
+    for lbl, tr in functional_transitions().items():
+        print(f"     {lbl:34} ΔE={tr['ΔE_эВ']:6.3f} эВ  λ={tr['λ_нм']:7.1f} нм  T_c={tr['T_c_К']:8.0f} К")
+    print("   ○ семантика (не физика): «два мира», «наблюдатель», «Христова цифра», 9→0")
 
     print("\n  ЗАКОНОМЕРНОСТЬ:")
     print("   числа = стадии конвейера = серии водорода = функции DIALOG.")

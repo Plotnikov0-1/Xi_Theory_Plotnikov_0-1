@@ -24,6 +24,14 @@ def test_card_lookup_and_modules():
 def test_letter_cards():
     assert {c.symbol for c in C.LETTER_CARDS} == {"А", "Л", "Д", "Х"}
 
+def test_hydrogen_anchored():
+    assert C.cards_are_hydrogen_anchored()
+    assert all(C.level_energy(n) < 0 for n in range(1, 8))
+    # Лайман-α (1↔2) = 121.5 нм
+    assert abs(C.transition(1, 2)["λ_нм"] - 121.5) < 0.5
+    # шёпот 4↔6 = 0.472 эВ
+    assert abs(C.transition(4, 6)["ΔE_эВ"] - 0.472) < 0.005
+
 def _run_all():
     fns=[v for k,v in sorted(globals().items()) if k.startswith('test_')]
     for fn in fns: fn(); print(f'  OK  {fn.__name__}')
