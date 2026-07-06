@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Живой центр · спор рождает двоих · тетраэдр→куб→додекаэдр на R²=3</title>
+<!--
+  ═══════════════════════════════════════════════════════════════════════
+   ЖИВОЙ ЦЕНТР (теорема, ◇ — доказано в qmt/geometry.py):
+   один тетраэдр + центр-зеркало −I → второй тетраэдр (stella octangula)
+   → два тетраэдра = куб (8 вершин) → +12 золотых точек (0,±1/φ,±φ)
+   → додекаэдр (20 вершин). Куб и додекаэдр НА ОДНОЙ СФЕРЕ R²=3.
+   φ²=φ+1. Зеркало 1↔9 = центральная инверсия. Онтология: «спор рождает двоих».
+   Координаты — точно из кода. Тяни — вращается. Слайдер/авто — стадии рождения.
+  ═══════════════════════════════════════════════════════════════════════
+-->
+<style>
+  :root{--a:#F2C879;--b:#C98A5A;--cube:#7FB0E6;--gold:#E0A96B;--ico:#7FD8C4;--ink:#DCE3F0;--mut:#828FA9;--ember:#B5613C;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:#0A0E1A}
+  body{font-family:'Iowan Old Style',Georgia,serif;color:var(--ink)}
+  #cv{display:block;width:100vw;height:100vh;cursor:grab;touch-action:none}
+  #cv:active{cursor:grabbing}
+  .cap{position:fixed;left:0;right:0;top:0;padding:14px 18px;pointer-events:none;
+       background:linear-gradient(180deg,rgba(10,14,26,.85),rgba(10,14,26,0))}
+  .eyebrow{font-family:'Helvetica Neue',Arial,sans-serif;text-transform:uppercase;
+           letter-spacing:.2em;font-size:10px;font-weight:700;color:var(--mut)}
+  h1{font-family:'Helvetica Neue',Arial,sans-serif;font-weight:800;text-transform:uppercase;
+     letter-spacing:.03em;font-size:clamp(12px,2.6vw,19px);margin-top:5px;color:var(--a)}
+  .stage{position:fixed;left:0;right:0;top:52px;text-align:center;pointer-events:none;
+         font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--a)}
+  .ctl{position:fixed;left:13px;bottom:52px;right:13px;display:flex;gap:10px;align-items:center;
+       font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--mut)}
+  input[type=range]{flex:1;accent-color:var(--a)}
+  button{font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;letter-spacing:.03em;
+         background:#141C2E;color:var(--ink);border:1px solid #20293D;border-radius:5px;
+         padding:6px 10px;cursor:pointer;text-transform:uppercase}
+  button.on{border-color:var(--a);color:var(--a)}
+  .legend{position:fixed;left:13px;bottom:13px;font-family:ui-monospace,Menlo,monospace;
+          font-size:10px;color:var(--mut);line-height:1.7;pointer-events:none}
+  .sw{display:inline-block;width:14px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div class="cap">
+  <div class="eyebrow">теорема живого центра · qmt/geometry.py · R²=3 · φ²=φ+1 · ◇</div>
+  <h1>Живой центр — спор рождает двоих</h1>
+</div>
+<div class="stage" id="stageTxt"></div>
+<div class="ctl">
+  <button id="bAuto" class="on">авто</button>
+  <span>стадия</span>
+  <input type="range" id="S" min="0" max="5" step="1" value="0">
+  <span class="val" id="sv">0</span>
+  <button id="bIco">икосаэдр</button>
+</div>
+<div class="legend">
+  <span class="sw" style="background:#F2C879"></span>тетраэдр A · <span class="sw" style="background:#C98A5A"></span>тетраэдр B (зеркало −I)<br>
+  <span class="sw" style="background:#7FB0E6"></span>куб (8 вершин) · <span class="sw" style="background:#E0A96B"></span>додекаэдр (+12 золотых)<br>
+  центр = живое зеркало −I · всё на сфере R²=3
+</div>
+
+<script>
+(function(){
+  var cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+  var W,H,DPR=Math.min(window.devicePixelRatio||1,2);
+  function resize(){W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
+  addEventListener('resize',resize);resize();
+
+  var PHI=(1+Math.sqrt(5))/2, A=PHI-1;
+  // куб (узлы по коду; зеркало k↔10−k)
+  var CUBE=[[1,-1,-1,-1],[2,1,-1,-1],[3,-1,1,-1],[4,-1,-1,1],[6,1,1,-1],[7,1,-1,1],[8,-1,1,1],[9,1,1,1]];
+  var TETA=[1,6,7,8], TETB=[2,3,4,9];
+  function cubePt(n){for(var i=0;i<8;i++)if(CUBE[i][0]===n)return [CUBE[i][1],CUBE[i][2],CUBE[i][3]];}
+  // 12 золотых точек
+  var GOLD=[];[[1,1],[1,-1],[-1,1],[-1,-1]].forEach(function(s){var s1=s[0],s2=s[1];
+    GOLD.push([0,s1*A,s2*PHI]);GOLD.push([s1*A,s2*PHI,0]);GOLD.push([s2*PHI,0,s1*A]);});
+  // икосаэдр (0,±1,±φ) цикл
+  var ICO=[];[[1,1],[1,-1],[-1,1],[-1,-1]].forEach(function(s){var s1=s[0],s2=s[1];
+    ICO.push([0,s1,s2*PHI]);ICO.push([s1,s2*PHI,0]);ICO.push([s2*PHI,0,s1]);});
+
+  var SC=Math.min(W,H); // масштаб задаётся в проекции
+  var ax=-0.5,az=0.6,drag=false,px=0,py=0,auto=true,stage=0,acc=0;
+  cv.addEventListener('pointerdown',function(e){drag=true;px=e.clientX;py=e.clientY;});
+  addEventListener('pointermove',function(e){if(!drag)return;az+=(e.clientX-px)/W*3;ax+=(e.clientY-py)/H*3;
+    if(ax<-1.55)ax=-1.55;if(ax>1.55)ax=1.55;px=e.clientX;py=e.clientY;});
+  addEventListener('pointerup',function(){drag=false;});addEventListener('pointercancel',function(){drag=false;});
+  var sSlider=document.getElementById('S'),sv=document.getElementById('sv'),stageTxt=document.getElementById('stageTxt');
+  sSlider.oninput=function(){stage=parseInt(sSlider.value);sv.textContent=stage;auto=false;document.getElementById('bAuto').classList.remove('on');};
+  document.getElementById('bAuto').onclick=function(){auto=!auto;this.classList.toggle('on',auto);};
+  var showIco=false;document.getElementById('bIco').onclick=function(){showIco=!showIco;this.classList.toggle('on',showIco);};
+
+  var STAGES=['точка · живой центр (−I)','один тетраэдр (4 вершины)',
+    '−I рождает второй — спор рождает двоих','два тетраэдра = куб (8 вершин, R²=3)',
+    '+12 золотых точек = додекаэдр (20, R²=3)','додекаэдр собран · φ живёт (R²=3)'];
+
+  function rot(p){var ca=Math.cos(az),sa=Math.sin(az);var x=p[0]*ca-p[1]*sa,y=p[0]*sa+p[1]*ca,z=p[2];
+    var cb=Math.cos(ax),sb=Math.sin(ax);return [x,y*cb-z*sb,y*sb+z*cb];}
+  function proj(p){var r=rot(p);var R=SC*0.30;var d=6.0-r[2];var s=R*4.2/d;return [W/2+r[0]*s,H/2-r[1]*s,r[2]];}
+  function line(a,b,col,w,al){var qa=proj(a),qb=proj(b);ctx.beginPath();ctx.moveTo(qa[0],qa[1]);ctx.lineTo(qb[0],qb[1]);
+    ctx.strokeStyle=col;ctx.lineWidth=w;ctx.globalAlpha=al;ctx.stroke();ctx.globalAlpha=1;}
+  function dot(a,col,r,al){var q=proj(a);ctx.beginPath();ctx.arc(q[0],q[1],r,0,7);ctx.fillStyle=col;ctx.globalAlpha=al;ctx.fill();ctx.globalAlpha=1;}
+  function edgesMin(pts){var n=pts.length,best=1e9,d=[];
+    for(var i=0;i<n;i++)for(var j=i+1;j<n;j++){var dx=pts[i][0]-pts[j][0],dy=pts[i][1]-pts[j][1],dz=pts[i][2]-pts[j][2];
+      var q=dx*dx+dy*dy+dz*dz;d.push([i,j,q]);if(q<best-1e-6)best=q;}
+    return d.filter(function(e){return Math.abs(e[2]-best)<1e-4;});}
+
+  function tetEdges(idx){var e=[];for(var i=0;i<idx.length;i++)for(var j=i+1;j<idx.length;j++)e.push([cubePt(idx[i]),cubePt(idx[j])]);return e;}
+
+  function frame(ts){
+    requestAnimationFrame(frame);
+    if(auto){acc+=1;if(acc>150){acc=0;stage=(stage+1)%6;sSlider.value=stage;sv.textContent=stage;}}
+    az+=0.0035;
+    var bg=ctx.createRadialGradient(W/2,H*0.46,0,W/2,H/2,Math.max(W,H)*0.7);
+    bg.addColorStop(0,'#0e1626');bg.addColorStop(1,'#0A0E1A');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+    stageTxt.textContent=STAGES[stage];
+
+    // сфера R=√3 (каркас) появляется со стадии куба
+    if(stage>=3){var R3=Math.sqrt(3);
+      for(var la=-60;la<=60;la+=30){var c0=(90-la)*Math.PI/180,prev=null;
+        for(var lo=0;lo<=360;lo+=12){var st=Math.sin(c0),P=[R3*st*Math.cos(lo*Math.PI/180),R3*st*Math.sin(lo*Math.PI/180),R3*Math.cos(c0)];
+          var q=proj(P);if(prev){ctx.beginPath();ctx.moveTo(prev[0],prev[1]);ctx.lineTo(q[0],q[1]);
+            ctx.strokeStyle='#172033';ctx.lineWidth=1;ctx.globalAlpha=0.5;ctx.stroke();ctx.globalAlpha=1;}prev=q;}}}
+
+    // центр — живое зеркало (пульсирует)
+    var pulse=0.6+0.4*Math.sin(ts/380);
+    dot([0,0,0],'#B5613C',5+2*pulse,0.9);
+    if(stage<=2){ctx.font='11px ui-monospace,Menlo,monospace';ctx.fillStyle='#B5613C';ctx.textAlign='center';
+      var qc=proj([0,0,0]);ctx.fillText('−I',qc[0],qc[1]-12);}
+
+    // стадия 1+: тетраэдр A
+    if(stage>=1){tetEdges(TETA).forEach(function(e){line(e[0],e[1],'#F2C879',2,0.9);});
+      TETA.forEach(function(n){dot(cubePt(n),'#F2C879',5,0.95);});}
+
+    // стадия 2+: −I рождает тетраэдр B; на стадии 2 — линии-антиподы
+    if(stage>=2){
+      if(stage===2){[[1,9],[6,4],[7,3],[8,2]].forEach(function(p){line(cubePt(p[0]),cubePt(p[1]),'#7FD8C4',1.2,0.5);});}
+      tetEdges(TETB).forEach(function(e){line(e[0],e[1],'#C98A5A',2,0.9);});
+      TETB.forEach(function(n){dot(cubePt(n),'#C98A5A',5,0.95);});}
+
+    // стадия 3+: куб (рёбра dist²=4)
+    if(stage>=3){var cp=CUBE.map(function(c){return [c[1],c[2],c[3]];});
+      edgesMin(cp).forEach(function(e){line(cp[e[0]],cp[e[1]],'#7FB0E6',1.4,0.7);});}
+
+    // стадия 4+: золотые точки + додекаэдр
+    if(stage>=4){
+      GOLD.forEach(function(g){dot(g,'#E0A96B',4,0.95);});
+      var dod=CUBE.map(function(c){return [c[1],c[2],c[3]];}).concat(GOLD);
+      edgesMin(dod).forEach(function(e){line(dod[e[0]],dod[e[1]],'#E0A96B',1.4,0.8);});}
+
+    // икосаэдр (по кнопке)
+    if(showIco){ICO.forEach(function(p){dot(p,'#7FD8C4',3,0.8);});
+      edgesMin(ICO).forEach(function(e){line(ICO[e[0]],ICO[e[1]],'#7FD8C4',1.1,0.5);});}
+
+    // подпись R²=3
+    if(stage>=3){ctx.font='10px ui-monospace,Menlo,monospace';ctx.fillStyle='#6f7c95';ctx.textAlign='left';
+      ctx.fillText('куб и додекаэдр на одной сфере R²=3 · φ²=φ+1 · ◇',14,H-70);}
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
