@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Часы разобраны · три квадрата · φ-каналы · слои-переходы</title>
+<!--
+  ═══════════════════════════════════════════════════════════════════════
+   ЧАСЫ РАЗОБРАНЫ НА ДЕТАЛИ — моя версия синхронизации теории с геометрией.
+  ═══════════════════════════════════════════════════════════════════════
+   ◇ Z₁₂/⟨3⟩ ≅ Z₃ = ТРИ переплетённых квадрата (0°/30°/60°):
+        π  {3,6,9,12}  структура (кардинальный крест)
+        φ  {1,4,7,10}  КАНАЛЫ — не касаются колец (внешний управляющий слой)
+        √2 {2,5,8,11}  мембрана (тёмные кружки, пересекают кольца)
+   ○ φ-семья несёт ОПЕРАТОР перехода T(x)=1/(1+x) → не состояние, а канал.
+   ○ слои (взрыв по глубине) = уровни перехода S_k (лестница памяти).
+   ○ Ю на месте 10 ∈ φ-канал → буква/символ входит через канал.
+   ✓ сфера-восьмёрок = сферическая Лиссажу 5:3 (Erb, arXiv:1802.06546).
+   Тяни — вращается. Ползунок «взрыв» разносит слои.  qmt/clock_layers.py
+  ═══════════════════════════════════════════════════════════════════════
+-->
+<style>
+  :root{--pi:#7FB0E6;--phi:#F2C879;--rt2:#C98A5A;--ring:#8FB4E6;--ink:#DCE3F0;--mut:#828FA9;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:#0A0E1A}
+  body{font-family:'Iowan Old Style',Georgia,serif;color:var(--ink)}
+  #cv{display:block;width:100vw;height:100vh;cursor:grab;touch-action:none}
+  #cv:active{cursor:grabbing}
+  .cap{position:fixed;left:0;right:0;top:0;padding:14px 18px;pointer-events:none;
+       background:linear-gradient(180deg,rgba(10,14,26,.85),rgba(10,14,26,0))}
+  .eyebrow{font-family:'Helvetica Neue',Arial,sans-serif;text-transform:uppercase;
+           letter-spacing:.2em;font-size:10px;font-weight:700;color:var(--mut)}
+  h1{font-family:'Helvetica Neue',Arial,sans-serif;font-weight:800;text-transform:uppercase;
+     letter-spacing:.03em;font-size:clamp(12px,2.6vw,19px);margin-top:5px;color:var(--phi)}
+  .toggle{position:fixed;right:13px;top:58px;display:flex;gap:6px;flex-direction:column}
+  button{font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;letter-spacing:.03em;
+         background:#141C2E;color:var(--ink);border:1px solid #20293D;border-radius:5px;
+         padding:6px 10px;cursor:pointer;text-transform:uppercase}
+  button.on{border-color:var(--phi);color:var(--phi)}
+  .ctl{position:fixed;left:13px;top:58px;background:#111726cc;border:1px solid #20293D;
+       border-radius:6px;padding:9px 11px;font-family:ui-monospace,Menlo,monospace;
+       font-size:11px;color:var(--mut)}
+  .ctl label{display:block;margin:3px 0}
+  input[type=range]{width:104px;accent-color:var(--phi);vertical-align:middle}
+  .val{color:var(--phi)}
+  .legend{position:fixed;left:13px;bottom:13px;font-family:ui-monospace,Menlo,monospace;
+          font-size:10px;color:var(--mut);line-height:1.8;pointer-events:none}
+  .sw{display:inline-block;width:15px;height:9px;border-radius:2px;margin-right:6px;vertical-align:middle}
+  .hint{position:fixed;right:13px;bottom:13px;font-size:10px;color:#6f7c95;pointer-events:none;
+        text-align:right;max-width:44%;line-height:1.5}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div class="cap">
+  <div class="eyebrow">Z₁₂/⟨3⟩ ≅ Z₃ · три квадрата · φ = оператор перехода = канал</div>
+  <h1>Часы разобраны на детали</h1>
+</div>
+<div class="toggle">
+  <button id="bSq"  class="on">три квадрата</button>
+  <button id="bChan" class="on">φ-каналы {1,4,7,10}</button>
+  <button id="bMemb" class="on">мембрана-кольца</button>
+  <button id="bNum" class="on">числа · Ю</button>
+  <button id="bSph" class="on">сфера-восьмёрок</button>
+  <button id="bGear" >шестерни-центр</button>
+</div>
+<div class="ctl">
+  <label>взрыв слоёв: <span class="val" id="vE">0.85</span></label>
+  <input type="range" id="E" min="0" max="1.8" step="0.01" value="0.85">
+  <label style="color:#6f7c95;margin-top:5px">слой = уровень перехода S_k</label>
+</div>
+<div class="legend">
+  <span class="sw" style="background:#7FB0E6"></span>π {3,6,9,12} — структура (крест)<br>
+  <span class="sw" style="background:#F2C879"></span>φ {1,4,7,10} — КАНАЛЫ (не касаются колец)<br>
+  <span class="sw" style="background:#C98A5A"></span>√2 {2,5,8,11} — мембрана (тёмные)<br>
+  <span class="sw" style="background:#8FB4E6"></span>сфера = Лиссажу 5:3 (Erb 1802.06546)
+</div>
+<div class="hint">тяни — вращается · «взрыв» разносит три квадрата по глубине = уровни перехода</div>
+
+<script>
+(function(){
+  var cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+  var W_,H_,DPR=Math.min(window.devicePixelRatio||1,2);
+  function resize(){W_=innerWidth;H_=innerHeight;cv.width=W_*DPR;cv.height=H_*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
+  addEventListener('resize',resize);resize();
+
+  var show={sq:true,chan:true,memb:true,num:true,sph:true,gear:false};
+  function tog(id,k){var b=document.getElementById(id);b.onclick=function(){show[k]=!show[k];b.classList.toggle('on',show[k]);};}
+  tog('bSq','sq');tog('bChan','chan');tog('bMemb','memb');tog('bNum','num');tog('bSph','sph');tog('bGear','gear');
+  var EXP=0.85;
+  (function(){var s=document.getElementById('E'),v=document.getElementById('vE');
+    s.oninput=function(){EXP=parseFloat(s.value);v.textContent=s.value;};})();
+
+  // ── камера ───────────────────────────────────────────────────────────────
+  var ax=-0.5,az=0.5,drag=false,px=0,py=0,auto=true;
+  cv.addEventListener('pointerdown',function(e){drag=true;auto=false;px=e.clientX;py=e.clientY;});
+  addEventListener('pointermove',function(e){if(!drag)return;az+=(e.clientX-px)/W_*3;ax+=(e.clientY-py)/H_*3;
+    if(ax<-1.55)ax=-1.55;if(ax>1.55)ax=1.55;px=e.clientX;py=e.clientY;});
+  addEventListener('pointerup',function(){drag=false;});addEventListener('pointercancel',function(){drag=false;});
+  function rot(p){var ca=Math.cos(az),sa=Math.sin(az);var x=p[0]*ca-p[1]*sa,y=p[0]*sa+p[1]*ca,z=p[2];
+    var cb=Math.cos(ax),sb=Math.sin(ax);return [x,y*cb-z*sb,y*sb+z*cb];}
+  function proj(p){var r=rot(p);var R=Math.min(W_,H_)*0.40;var d=5.0-r[2];var s=R*3.6/d;
+    return [W_/2+r[0]*s,H_/2-r[1]*s,r[2],s];}
+
+  // ── семьи: класс mod 3 → (цвет, глубина слоя, роль) ──────────────────────
+  //  час h (1..12); угол сверху по часовой; 12 наверху.
+  var FAM={0:{c:'#7FB0E6',dz:+1},   // π  {3,6,9,12}
+           1:{c:'#F2C879',dz: 0},   // φ  {1,4,7,10} — каналы
+           2:{c:'#C98A5A',dz:-1}};  // √2 {2,5,8,11}
+  function famOf(h){return (h%3);}                 // 12%3=0(π),1%3=1(φ),2%3=2(√2)…
+  function clockPt(h,zextra){var a=Math.PI/2 - h*Math.PI/6;   // 12 наверху, по часовой
+    return [Math.cos(a), Math.sin(a), zextra];}
+
+  // ── сфера-восьмёрок (Лиссажу 5:3) в центре, маленькая ────────────────────
+  function lissa(t,R){var ca=Math.cos(5*t),sa=Math.sin(5*t),cb=Math.cos(3*t),sb=Math.sin(3*t);
+    return [R*sb*ca, R*cb*ca, R*sa];}
+
+  function ring3D(center,rad,col,w,al,z0){ // кольцо в плоскости, || экватору слоя
+    ctx.beginPath();var st=false;
+    for(var i=0;i<=40;i++){var a=i/40*2*Math.PI;
+      var P=[center[0]+rad*Math.cos(a),center[1]+rad*Math.sin(a),center[2]];
+      var q=proj(P);if(!st){ctx.moveTo(q[0],q[1]);st=true;}else ctx.lineTo(q[0],q[1]);}
+    ctx.strokeStyle=col;ctx.lineWidth=w;ctx.globalAlpha=al;ctx.stroke();ctx.globalAlpha=1;}
+
+  function frame(){
+    requestAnimationFrame(frame);
+    if(auto)az+=0.004;
+    var rg=ctx.createRadialGradient(W_/2,H_*0.44,0,W_/2,H_*0.5,Math.max(W_,H_)*0.8);
+    rg.addColorStop(0,'#0e1626');rg.addColorStop(1,'#0A0E1A');ctx.fillStyle=rg;ctx.fillRect(0,0,W_,H_);
+
+    var e=EXP;
+    // слабое кольцо-обод каждого слоя-квадрата
+    if(show.sq){for(var f=0;f<3;f++){ring3D([0,0,FAM[f].dz*e],1.0,FAM[f].c,1,0.22,0);}}
+
+    // сфера-восьмёрок (глубоко за центром)
+    if(show.sph){var prev=null;
+      for(var i=0;i<=1400;i++){var t=i/1400*15*Math.PI;var P=lissa(t,0.5);P[2]-=0.0;
+        var q=proj(P);if(prev){ctx.beginPath();ctx.moveTo(prev[0],prev[1]);ctx.lineTo(q[0],q[1]);
+          ctx.strokeStyle='#8FB4E6';ctx.globalAlpha=(q[2]>0?0.5:0.16);ctx.lineWidth=1.1;ctx.stroke();ctx.globalAlpha=1;}
+        prev=q;}}
+
+    // шестерни-центр (маленькие кружки в плоскости φ)
+    if(show.gear){for(var g=0;g<7;g++){var a=g*2*Math.PI/7;
+      ring3D([0.28*Math.cos(a),0.28*Math.sin(a),0],0.12,'#9a7b52',1,0.5,0);}
+      ring3D([0,0,0],0.16,'#b89463',1.2,0.7,0);}
+
+    // три квадрата: рёбра + узлы; φ-каналы = радиальные спицы (не касаются колец)
+    for(var h=1;h<=12;h++){
+      var f=famOf(h), F=FAM[f], z=F.dz*e;
+      var P=clockPt(h,z), q=proj(P);
+      // рёбра квадрата к следующему в семье (h+3)
+      if(show.sq){var h2=h+3; if(h2<=12){var P2=clockPt(h2,z),q2=proj(P2);
+        ctx.beginPath();ctx.moveTo(q[0],q[1]);ctx.lineTo(q2[0],q2[1]);
+        ctx.strokeStyle=F.c;ctx.lineWidth=1.4;ctx.globalAlpha=0.55;ctx.stroke();ctx.globalAlpha=1;}
+        else{var Pw=clockPt((h+3-12),z),qw=proj(Pw); // замыкание квадрата
+          ctx.beginPath();ctx.moveTo(q[0],q[1]);ctx.lineTo(qw[0],qw[1]);
+          ctx.strokeStyle=F.c;ctx.lineWidth=1.4;ctx.globalAlpha=0.55;ctx.stroke();ctx.globalAlpha=1;}}
+      // φ-КАНАЛ: спица центр→узел, стрелка наружу (управляющий слой)
+      if(f===1 && show.chan){var c0=proj([0,0,z]);
+        ctx.beginPath();ctx.moveTo(c0[0],c0[1]);ctx.lineTo(q[0],q[1]);
+        ctx.strokeStyle=F.c;ctx.lineWidth=1.6;ctx.globalAlpha=0.85;ctx.setLineDash([4,3]);ctx.stroke();
+        ctx.setLineDash([]);ctx.globalAlpha=1;}
+      // мембрана: кружок-кольцо на узлах √2 и π (то, что φ НЕ имеет)
+      if(f!==1 && show.memb){ring3D(P,0.11,(f===2?'#C98A5A':'#7FB0E6'),1.4,0.85,0);}
+      // узел-точка
+      ctx.fillStyle=F.c;ctx.globalAlpha=0.95;ctx.beginPath();ctx.arc(q[0],q[1],f===1?4.2:3,0,7);ctx.fill();ctx.globalAlpha=1;
+      // числа (Ю на 10)
+      if(show.num){ctx.font=(f===1?'bold ':'')+'13px ui-monospace,Menlo,monospace';ctx.textAlign='center';
+        ctx.fillStyle=F.c;var lab=(h===10?'Ю':(h===12?'12':String(h)));
+        var out=proj(clockPt(h,z).map(function(v,i){return i<2?v*1.16:v;}));
+        ctx.fillText(lab,out[0],out[1]+4);}
+    }
+
+    // подпись осей семей
+    ctx.font='10px ui-monospace,Menlo,monospace';ctx.textAlign='center';
+    [['π структура',0],['φ КАНАЛ',1],['√2 мембрана',2]].forEach(function(t){
+      var q=proj([0,-1.28,FAM[t[1]].dz*e]);ctx.fillStyle=FAM[t[1]].c;ctx.globalAlpha=0.8;
+      ctx.fillText(t[0],q[0],q[1]);ctx.globalAlpha=1;});
+  }
+  frame();
+})();
+</script>
+</body>
+</html>
