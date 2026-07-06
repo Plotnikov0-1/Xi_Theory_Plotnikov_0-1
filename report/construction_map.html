@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Конструкция DIALOG-QMT · 12 корней · три орбиты ×i · зеркало i²</title>
+<!--
+  ═══════════════════════════════════════════════════════════════════════
+   КАРТА КОНСТРУКЦИИ (после сведения к костяку).
+   ◇ 12 узлов = 12 корней из единицы (узел k = e^{iπk/6}).
+   ◇ нити-операторы = степени i:  ×i = +3 (90°) = генератор семьи (Z₄).
+   ◇ i² = −1 = зеркало −I = +6 (180°) = диаметры (антиподы).
+   ◇ три семьи = три ОРБИТЫ ×i:  φ{1,4,7,10} · √2{2,5,8,11} · π{3,6,9,12}.
+   ◇/✓ стрела времени = направление ×i (диссипация), обратное = ×(−i).
+   ○ имена семей φ/√2/π — интерпретация. Центр 0 = седло (Ирншоу ✓).
+  ═══════════════════════════════════════════════════════════════════════
+-->
+<style>
+  :root{--pi:#7FB0E6;--phi:#F2C879;--rt2:#C98A5A;--ink:#DCE3F0;--mut:#828FA9;--mir:#7FD8C4;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:#0A0E1A}
+  body{font-family:'Iowan Old Style',Georgia,serif;color:var(--ink)}
+  #cv{display:block;width:100vw;height:100vh}
+  .cap{position:fixed;left:0;right:0;top:0;padding:14px 18px;pointer-events:none;
+       background:linear-gradient(180deg,rgba(10,14,26,.85),rgba(10,14,26,0))}
+  .eyebrow{font-family:'Helvetica Neue',Arial,sans-serif;text-transform:uppercase;
+           letter-spacing:.2em;font-size:10px;font-weight:700;color:var(--mut)}
+  h1{font-family:'Helvetica Neue',Arial,sans-serif;font-weight:800;text-transform:uppercase;
+     letter-spacing:.03em;font-size:clamp(12px,2.6vw,19px);margin-top:5px;color:var(--phi)}
+  .toggle{position:fixed;right:13px;top:58px;display:flex;gap:6px;flex-direction:column}
+  button{font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;letter-spacing:.03em;
+         background:#141C2E;color:var(--ink);border:1px solid #20293D;border-radius:5px;
+         padding:6px 10px;cursor:pointer;text-transform:uppercase}
+  button.on{border-color:var(--phi);color:var(--phi)}
+  .legend{position:fixed;left:13px;bottom:13px;font-family:ui-monospace,Menlo,monospace;
+          font-size:10px;color:var(--mut);line-height:1.85;pointer-events:none}
+  .sw{display:inline-block;width:15px;height:9px;border-radius:2px;margin-right:6px;vertical-align:middle}
+  .hint{position:fixed;right:13px;bottom:13px;font-size:10px;color:#6f7c95;pointer-events:none;
+        text-align:right;max-width:46%;line-height:1.5}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div class="cap">
+  <div class="eyebrow">12 узлов = корни из единицы · нити = степени i · i²=−1 зеркало</div>
+  <h1>Конструкция — как она работает</h1>
+</div>
+<div class="toggle">
+  <button id="bSq" class="on">три квадрата (орбиты ×i)</button>
+  <button id="bMir" class="on">зеркало i² (диаметры)</button>
+  <button id="bRun" class="on">операторы ×i бегут</button>
+  <button id="bSph" >сфера-представление</button>
+  <button id="bConst" class="on">константы узлов</button>
+</div>
+<div class="legend">
+  <span class="sw" style="background:#F2C879"></span>φ {1,4,7,10} — золото (каналы ○)<br>
+  <span class="sw" style="background:#C98A5A"></span>√2 {2,5,8,11} — серебро (мембрана ○)<br>
+  <span class="sw" style="background:#7FB0E6"></span>π {3,6,9,12} — структура (крест)<br>
+  <span class="sw" style="background:#7FD8C4"></span>i² = −1 — зеркало (антиподы k↔k+6)<br>
+  центр 0 — седло (Ирншоу ✓) · стрела = направление ×i
+</div>
+<div class="hint">три нити ×i бегут по своим квадратам (+3 = 90°); i²=−1 = зеркало через центр</div>
+
+<script>
+(function(){
+  var cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+  var W,H,DPR=Math.min(window.devicePixelRatio||1,2);
+  function resize(){W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
+  addEventListener('resize',resize);resize();
+
+  var show={sq:true,mir:true,run:true,sph:false,cons:true};
+  function tog(id,k){var b=document.getElementById(id);b.onclick=function(){show[k]=!show[k];b.classList.toggle('on',show[k]);};}
+  tog('bSq','sq');tog('bMir','mir');tog('bRun','run');tog('bSph','sph');tog('bConst','cons');
+
+  var COL={0:'#7FB0E6',1:'#F2C879',2:'#C98A5A'};   // k%3 -> π / φ / √2
+  function fam(k){return ((k%12)+12)%3;}
+  // узел k (1..12): 12 наверху, по часовой
+  function pos(k,R){var a=(k*30-90)*Math.PI/180; return [Math.cos(a)*R,Math.sin(a)*R];}
+  var CLOCK={10:'Ю'};
+  function lab(k){return CLOCK[k]||String(k===12?12:k);}
+
+  // сфера-представление (Лиссажу 5:3), маленькая, за кругом
+  function lissa(t,R){var ca=Math.cos(5*t),sa=Math.sin(5*t),cb=Math.cos(3*t),sb=Math.sin(3*t);
+    return [R*sb*ca, R*sa, R*cb*ca];} // проекция XY
+
+  var t0=0;
+  function frame(ts){
+    requestAnimationFrame(frame);
+    var cx=W/2, cy=H/2+8, R=Math.min(W,H)*0.34;
+    var bg=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(W,H)*0.7);
+    bg.addColorStop(0,'#0e1626');bg.addColorStop(1,'#0A0E1A');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+    // окружность (грань шара = единичная окружность корней)
+    ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.strokeStyle='#1b2740';ctx.lineWidth=1.4;ctx.globalAlpha=0.7;ctx.stroke();ctx.globalAlpha=1;
+
+    // сфера-представление позади (faint)
+    if(show.sph){var prev=null;
+      for(var i=0;i<=1200;i++){var t=i/1200*15*Math.PI;var P=lissa(t,R*0.66);
+        var q=[cx+P[0],cy+P[1]];
+        if(prev){ctx.beginPath();ctx.moveTo(prev[0],prev[1]);ctx.lineTo(q[0],q[1]);
+          ctx.strokeStyle='#3a5f8f';ctx.globalAlpha=0.30;ctx.lineWidth=1;ctx.stroke();ctx.globalAlpha=1;}
+        prev=q;}}
+
+    // зеркало i²: диаметры k <-> k+6
+    if(show.mir){for(var k=1;k<=6;k++){var A=pos(k,R),B=pos(k+6,R);
+      ctx.beginPath();ctx.moveTo(cx+A[0],cy+A[1]);ctx.lineTo(cx+B[0],cy+B[1]);
+      ctx.strokeStyle='#7FD8C4';ctx.lineWidth=1;ctx.globalAlpha=0.22;ctx.stroke();ctx.globalAlpha=1;}}
+
+    // три квадрата (орбиты ×i): ребро k -> k+3
+    if(show.sq){for(var k=1;k<=12;k++){var A=pos(k,R),B=pos(((k+3-1)%12)+1,R);
+      ctx.beginPath();ctx.moveTo(cx+A[0],cy+A[1]);ctx.lineTo(cx+B[0],cy+B[1]);
+      ctx.strokeStyle=COL[fam(k)];ctx.lineWidth=1.5;ctx.globalAlpha=0.5;ctx.stroke();ctx.globalAlpha=1;}}
+
+    // бегущие операторы ×i: три токена (по одному на семью), шаг +3
+    if(show.run){
+      var period=1100, phase=(ts%(period*4))/period; // 0..4
+      var step=Math.floor(phase), frac=phase-step;
+      var ease=frac<0.5?2*frac*frac:1-Math.pow(-2*frac+2,2)/2;
+      [1,2,3].forEach(function(start){
+        var k=((start-1+3*step)%12)+1, kn=((k-1+3)%12)+1;
+        var A=pos(k,R),B=pos(kn,R);
+        var x=cx+A[0]+(B[0]-A[0])*ease, y=cy+A[1]+(B[1]-A[1])*ease;
+        ctx.beginPath();ctx.arc(x,y,6,0,7);ctx.fillStyle=COL[fam(start)];ctx.globalAlpha=0.95;ctx.fill();ctx.globalAlpha=1;
+        // хвост-стрелка
+        ctx.beginPath();ctx.moveTo(cx+A[0],cy+A[1]);ctx.lineTo(x,y);
+        ctx.strokeStyle=COL[fam(start)];ctx.lineWidth=2.4;ctx.globalAlpha=0.8;ctx.stroke();ctx.globalAlpha=1;
+      });
+    }
+
+    // узлы
+    for(var k=1;k<=12;k++){var A=pos(k,R);var x=cx+A[0],y=cy+A[1];var c=COL[fam(k)];
+      ctx.beginPath();ctx.arc(x,y,k%3===1?5:4,0,7);ctx.fillStyle=c;ctx.fill();
+      // метка узла (Ю на 10)
+      var out=pos(k,R+22);
+      ctx.font=(k%3===1?'bold ':'')+'14px ui-monospace,Menlo,monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillStyle=c;ctx.fillText(lab(k),cx+out[0],cy+out[1]);
+      // константа-угол
+      if(show.cons){var oc=pos(k,R-20);ctx.font='9px ui-monospace,Menlo,monospace';ctx.fillStyle='#6f7c95';
+        ctx.fillText((k*30)+'°',cx+oc[0],cy+oc[1]);}
+    }
+
+    // i и i² аннотации
+    var pi3=pos(3,R+44),pi6=pos(6,R+44);
+    ctx.font='11px ui-monospace,Menlo,monospace';ctx.fillStyle='#F2C879';ctx.fillText('i (×i=+3)',cx+pi3[0],cy+pi3[1]);
+    ctx.fillStyle='#7FD8C4';ctx.fillText('i²=−1',cx+pi6[0],cy+pi6[1]);
+
+    // центр = седло
+    ctx.beginPath();ctx.arc(cx,cy,4,0,7);ctx.fillStyle='#B5613C';ctx.fill();
+    ctx.font='10px ui-monospace,Menlo,monospace';ctx.fillStyle='#B5613C';ctx.textBaseline='top';
+    ctx.fillText('центр 0 · седло',cx,cy+8);
+
+    // стрела времени (дуга направления ×i)
+    ctx.beginPath();ctx.arc(cx,cy,R+34,-0.5,0.35);ctx.strokeStyle='#8FB4E6';ctx.lineWidth=1.4;ctx.globalAlpha=0.55;ctx.stroke();ctx.globalAlpha=1;
+    var tip=[cx+(R+34)*Math.cos(0.35),cy+(R+34)*Math.sin(0.35)];
+    ctx.beginPath();ctx.moveTo(tip[0],tip[1]);ctx.lineTo(tip[0]-6,tip[1]-2);ctx.lineTo(tip[0]-1,tip[1]+6);ctx.closePath();
+    ctx.fillStyle='#8FB4E6';ctx.globalAlpha=0.7;ctx.fill();ctx.globalAlpha=1;
+    ctx.font='9px ui-monospace,Menlo,monospace';ctx.fillStyle='#6f7c95';ctx.textAlign='left';ctx.textBaseline='middle';
+    ctx.fillText('стрела = ×i (диссипация); ×(−i) = назад',cx+R*0.2,cy-R-40);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
