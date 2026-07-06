@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Сфера из восьмёрок · спherical Lissajous a:b · экватор исправлен</title>
+<!--
+  ═══════════════════════════════════════════════════════════════════════
+   СФЕРА ИЗ ВОСЬМЁРОК — точный сферический Лиссажу (по мотиву Wolfram)
+  ═══════════════════════════════════════════════════════════════════════
+   Вторая картинка = Wolfram:  ParametricPlot[{Sin[b t] Cos[a t], Sin[a t]}]
+   Это ПЛОСКАЯ тень. Недостающая глубина: z = Cos[b t] Cos[a t].
+   Тогда точка ЛЕЖИТ РОВНО НА ЕДИНИЧНОЙ СФЕРЕ:
+
+     x = sin(b t)·cos(a t)
+     y = cos(b t)·cos(a t)          (глубина — её на 2D-картинке не видно)
+     z = sin(a t)                    (ось полюсов 1–9)
+     x²+y²+z² = cos²(a t)·(sin²b t+cos²b t) + sin²(a t) = 1   ◇ ТОЧНО, для всех t
+
+   ЭКВАТОР ИСПРАВЛЕН (в старом файле был сдвиг вниз 1/φ²):
+     кривая пересекает экватор ровно при z=sin(a t)=0  →  на самом экваторе. ◇
+
+   ЧЕСТНО (ярусы):
+     ◇ точно : лифт лежит на сфере; пересечения на экваторе — доказано тождеством.
+     ◇ точно : число «восьмёрок» = a (вертикальных касаний полюса), лепестков ~ b.
+     ○ интерпретация : подпись 12/Ю (часы), связь с узлами теории — язык, не физика.
+
+   Управление: тяни мышью/пальцем — вращается. Кнопки — слои. Ползунки — a, b, N.
+  ═══════════════════════════════════════════════════════════════════════
+-->
+<style>
+  :root{--exit:#F2E2B6;--amber:#E0A96B;--gen:#6A8CC0;--front:#8FB4E6;--ember:#B5613C;
+        --equ:#7FD8C4;--ink:#DCE3F0;--mut:#828FA9;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:#0A0E1A}
+  body{font-family:'Iowan Old Style',Georgia,serif;color:var(--ink)}
+  #cv{display:block;width:100vw;height:100vh;cursor:grab;touch-action:none}
+  #cv:active{cursor:grabbing}
+  .cap{position:fixed;left:0;right:0;top:0;padding:14px 18px;pointer-events:none;
+       background:linear-gradient(180deg,rgba(10,14,26,.82),rgba(10,14,26,0))}
+  .eyebrow{font-family:'Helvetica Neue',Arial,sans-serif;text-transform:uppercase;
+           letter-spacing:.2em;font-size:10px;font-weight:700;color:var(--mut)}
+  h1{font-family:'Helvetica Neue',Arial,sans-serif;font-weight:800;text-transform:uppercase;
+     letter-spacing:.03em;font-size:clamp(13px,2.8vw,20px);margin-top:5px;color:var(--exit)}
+  .toggle{position:fixed;right:13px;top:56px;display:flex;gap:6px;flex-direction:column}
+  button{font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;letter-spacing:.03em;
+         background:#141C2E;color:var(--ink);border:1px solid #20293D;border-radius:5px;
+         padding:6px 10px;cursor:pointer;text-transform:uppercase}
+  button.on{border-color:var(--exit);color:var(--exit)}
+  .ctl{position:fixed;left:13px;top:56px;background:#111726cc;border:1px solid #20293D;
+       border-radius:6px;padding:9px 11px;font-family:ui-monospace,Menlo,monospace;
+       font-size:11px;color:var(--mut)}
+  .ctl label{display:block;margin:3px 0}
+  input[type=range]{width:104px;accent-color:var(--exit);vertical-align:middle}
+  .val{color:var(--exit)}
+  .legend{position:fixed;left:13px;bottom:13px;font-family:ui-monospace,Menlo,monospace;
+          font-size:10px;color:var(--mut);line-height:1.75;pointer-events:none}
+  .sw{display:inline-block;width:15px;height:3px;margin-right:6px;vertical-align:middle}
+  .hint{position:fixed;right:13px;bottom:13px;font-size:10px;color:#6f7c95;pointer-events:none;
+        text-align:right;max-width:42%;line-height:1.5}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div class="cap">
+  <div class="eyebrow">Сферический Лиссажу · x=sin(b t)cos(a t), z=sin(a t) · лежит на сфере ◇</div>
+  <h1>Сфера из восьмёрок · экватор исправлен</h1>
+</div>
+<div class="toggle">
+  <button id="bLis" class="on">режим Лиссажу (a:b)</button>
+  <button id="bFlo" >режим «цветок» (N восьмёрок)</button>
+  <button id="bEqu" class="on">экватор</button>
+  <button id="bGold" >кольца 36°/72°</button>
+  <button id="bClock" >часы 12/Ю</button>
+  <button id="bStar" >звезда {12/5}</button>
+  <button id="bBack" class="on">задняя часть</button>
+</div>
+<div class="ctl">
+  <label>a (верт., «восьмёрки»): <span class="val" id="vA">5</span></label>
+  <input type="range" id="A" min="1" max="12" step="1" value="5">
+  <label>b (лепестки/поворот): <span class="val" id="vB">3</span></label>
+  <input type="range" id="B" min="1" max="12" step="1" value="3">
+  <label>N (цветок, восьмёрок): <span class="val" id="vN">12</span></label>
+  <input type="range" id="N" min="1" max="28" step="1" value="12">
+  <label style="color:#6f7c95;margin-top:5px">a=5,b=3 = вторая картинка (Wolfram)</label>
+</div>
+<div class="legend">
+  <span class="sw" style="background:#8FB4E6"></span>кривая-восьмёрка (перёд)<br>
+  <span class="sw" style="background:#7FD8C4"></span>ЭКВАТОР (исправлен: пересечения на нём)<br>
+  <span class="sw" style="background:#E0A96B"></span>золотые кольца 36°/72°<br>
+  <span class="sw" style="background:#B5613C"></span>ось полюсов 1–9
+</div>
+<div class="hint">тяни — вращается · a = число касаний полюса (восьмёрок) · b = закрутка лепестков</div>
+
+<script>
+(function(){
+  var cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+  var W_,H_,DPR=Math.min(window.devicePixelRatio||1,2);
+  function resize(){W_=innerWidth;H_=innerHeight;cv.width=W_*DPR;cv.height=H_*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
+  addEventListener('resize',resize);resize();
+
+  var show={lis:true,flo:false,equ:true,gold:false,clock:false,star:false,back:true};
+  function tog(id,k,solo){var b=document.getElementById(id);b.onclick=function(){
+    show[k]=!show[k];b.classList.toggle('on',show[k]);
+    if(solo&&show[k]){ // Лиссажу и цветок взаимоисключающие
+      var other=solo==='lis'?'flo':'lis',ob=document.getElementById(solo==='lis'?'bFlo':'bLis');
+      show[other]=false;ob.classList.remove('on');
+    }
+  };}
+  tog('bLis','lis','lis');tog('bFlo','flo','flo');
+  tog('bEqu','equ');tog('bGold','gold');tog('bClock','clock');tog('bStar','star');tog('bBack','back');
+
+  var A_=5,B_=3,NP=12;
+  function bind(id,vid,set){var s=document.getElementById(id),v=document.getElementById(vid);
+    s.oninput=function(){set(parseFloat(s.value));v.textContent=s.value;};}
+  bind('A','vA',function(x){A_=x;});bind('B','vB',function(x){B_=x;});bind('N','vN',function(x){NP=x;});
+
+  // ── камера/вращение (как в исходном файле) ──────────────────────────────
+  var ax=-0.28,az=0.35,drag=false,px=0,py=0,auto=true;
+  cv.addEventListener('pointerdown',function(e){drag=true;auto=false;px=e.clientX;py=e.clientY;});
+  addEventListener('pointermove',function(e){if(!drag)return;az+=(e.clientX-px)/W_*3;ax+=(e.clientY-py)/H_*3;
+    if(ax<-1.55)ax=-1.55;if(ax>1.55)ax=1.55;px=e.clientX;py=e.clientY;});
+  addEventListener('pointerup',function(){drag=false;});addEventListener('pointercancel',function(){drag=false;});
+
+  function rot(p){var ca=Math.cos(az),sa=Math.sin(az);var x=p[0]*ca-p[1]*sa,y=p[0]*sa+p[1]*ca,z=p[2];
+    var cb=Math.cos(ax),sb=Math.sin(ax);return [x,y*cb-z*sb,y*sb+z*cb];}
+  function proj(p){var r=rot(p);var R=Math.min(W_,H_)*0.40;var d=4.4-r[2];var s=R*3.3/d;
+    return [W_/2+r[0]*s,H_/2-r[1]*s,r[2]];}
+  function sph(colat,lon){var st=Math.sin(colat);return [st*Math.cos(lon),st*Math.sin(lon),Math.cos(colat)];}
+  function rz(p,a){var c=Math.cos(a),s=Math.sin(a);return [p[0]*c-p[1]*s,p[0]*s+p[1]*c,p[2]];}
+
+  // ── ТОЧНЫЙ сферический Лиссажу (лифт Wolfram-кривой на сферу) ────────────
+  //  ось полюсов = компонента [2] = sin(a t).  x²+y²+z²=1 тождественно. ◇
+  function lissa(t){
+    var ca=Math.cos(A_*t),sa=Math.sin(A_*t),cb=Math.cos(B_*t),sb=Math.sin(B_*t);
+    return [sb*ca, cb*ca, sa];      // [X, глубина, полюс]
+  }
+  function gcd(a,b){while(b){var t=b;b=a%b;a=t;}return a;}
+  function lcm(a,b){return a/gcd(a,b)*b;}
+
+  // ── симметричная вертикальная восьмёрка (цветок), крест НА экваторе ──────
+  //  без золотого сдвига → пересечение ровно при lat=0. ◇ исправленный экватор
+  function eight(s){
+    var lat=(Math.PI/2)*Math.sin(s);   // ±90° = полюса, 0 = экватор
+    var lon=0.62*Math.sin(2*s);        // делает «8», крест при sin s=0 (экватор)
+    return sph(Math.PI/2-lat,lon);
+  }
+
+  function drawCurve(fn,tMax,steps,col,wF,alF){
+    var prev=null,prevZ=0;
+    for(var i=0;i<=steps;i++){
+      var P=fn(i/steps*tMax); var r=rot(P); var q=proj(P);
+      if(prev){
+        var front=(r[2]+prevZ)/2>0;
+        if(front||show.back){
+          ctx.beginPath();ctx.moveTo(prev[0],prev[1]);ctx.lineTo(q[0],q[1]);
+          if(front){ctx.strokeStyle=col;ctx.globalAlpha=alF;ctx.lineWidth=wF;}
+          else{ctx.strokeStyle='#3a4a63';ctx.globalAlpha=0.42;ctx.lineWidth=Math.max(1,wF-0.6);}
+          ctx.stroke();ctx.globalAlpha=1;
+        }
+      }
+      prev=q;prevZ=r[2];
+    }
+  }
+  // рисуем великий круг заданной коллатитуды (кольцо)
+  function ring(colat,col,w,al){ctx.beginPath();var st=false;
+    for(var lo=0;lo<=2*Math.PI+0.01;lo+=0.04){var P=sph(colat,lo);var r=rot(P);
+      if(r[2]<-0.02){st=false;continue;}var q=proj(P);if(!st){ctx.moveTo(q[0],q[1]);st=true;}else ctx.lineTo(q[0],q[1]);}
+    ctx.strokeStyle=col;ctx.lineWidth=w;ctx.globalAlpha=al;ctx.stroke();ctx.globalAlpha=1;}
+
+  // подписи часов: 12 позиций по экватору, Ю на месте 10 (как на настоящих часах)
+  var CLOCK=['12','1','2','3','4','5','6','7','8','9','Ю','11'];
+  function frame(){
+    requestAnimationFrame(frame);
+    if(auto)az+=0.0038;
+    var rg=ctx.createRadialGradient(W_/2,H_*0.44,0,W_/2,H_*0.5,Math.max(W_,H_)*0.75);
+    rg.addColorStop(0,'#0e1626');rg.addColorStop(1,'#0A0E1A');ctx.fillStyle=rg;ctx.fillRect(0,0,W_,H_);
+
+    // каркас-меридианы (тонкие)
+    for(var lo=0;lo<2*Math.PI;lo+=Math.PI/6){ctx.beginPath();var s1=false;
+      for(var c=0;c<=Math.PI;c+=0.08){var P=sph(c,lo);var r=rot(P);if(r[2]<-0.02){s1=false;continue;}
+        var q=proj(P);if(!s1){ctx.moveTo(q[0],q[1]);s1=true;}else ctx.lineTo(q[0],q[1]);}
+      ctx.strokeStyle='#161e2c';ctx.lineWidth=1;ctx.globalAlpha=0.32;ctx.stroke();ctx.globalAlpha=1;}
+
+    // золотые кольца
+    if(show.gold){ring(36*Math.PI/180,'#E0A96B',1.6,0.5);ring(72*Math.PI/180,'#E0A96B',1.6,0.5);}
+
+    // ЭКВАТОР (исправление) — яркий, на нём лежат пересечения восьмёрок
+    if(show.equ){ring(Math.PI/2,'#7FD8C4',2.2,0.85);}
+
+    // главная кривая
+    if(show.lis){
+      var tMax=Math.PI*lcm(A_,B_);            // как в Wolfram: LCM[a,b]·π
+      drawCurve(lissa,tMax,3200,'#8FB4E6',1.7,0.95);
+    }
+    if(show.flo){
+      for(var p=0;p<NP;p++){var ang=p*2*Math.PI/NP;
+        drawCurve(function(u){return rz(eight(u*2*Math.PI),ang);},1,420,'#8FB4E6',1.6,0.92);}
+    }
+
+    // звезда {12/5} по экватору (эхо красной разметки на часах)
+    if(show.star){var pts=[];for(var k=0;k<12;k++)pts.push(sph(Math.PI/2,k*Math.PI/6));
+      ctx.strokeStyle='#B5613C';ctx.lineWidth=1.3;ctx.globalAlpha=0.7;
+      var idx=0;ctx.beginPath();var moved=false;
+      for(var n=0;n<=12;n++){var P=pts[idx%12];var r=rot(P);var q=proj(P);
+        if(r[2]>-0.05){if(!moved){ctx.moveTo(q[0],q[1]);moved=true;}else ctx.lineTo(q[0],q[1]);}else moved=false;
+        idx+=5;}
+      ctx.stroke();ctx.globalAlpha=1;}
+
+    // подписи часов по экватору
+    if(show.clock){ctx.font='12px ui-monospace,Menlo,monospace';ctx.textAlign='center';
+      for(var k=0;k<12;k++){var P=sph(Math.PI/2,k*Math.PI/6 - Math.PI/2);var r=rot(P);
+        if(r[2]<0)continue;var q=proj(P);ctx.fillStyle=(CLOCK[k]==='Ю')?'#F2E2B6':'#9fb0cc';
+        ctx.globalAlpha=0.9;ctx.fillText(CLOCK[k],q[0],q[1]-4);ctx.globalAlpha=1;}}
+
+    // ось полюсов 1–9
+    var pN=proj([0,0,1]),pS=proj([0,0,-1]);
+    ctx.strokeStyle='#B5613C';ctx.lineWidth=1.4;ctx.globalAlpha=0.6;
+    ctx.beginPath();ctx.moveTo(pN[0],pN[1]);ctx.lineTo(pS[0],pS[1]);ctx.stroke();ctx.globalAlpha=1;
+    ctx.fillStyle='#B5613C';[pN,pS].forEach(function(pp){ctx.beginPath();ctx.arc(pp[0],pp[1],4,0,7);ctx.fill();});
+    ctx.font='11px ui-monospace,Menlo,monospace';ctx.textAlign='center';
+    ctx.fillText('9',pN[0],pN[1]-9);ctx.fillText('1',pS[0],pS[1]+16);
+  }
+  frame();
+})();
+</script>
+</body>
+</html>
