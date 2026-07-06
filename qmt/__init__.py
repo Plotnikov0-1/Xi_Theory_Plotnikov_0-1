@@ -54,6 +54,7 @@ from . import (
     faces,
     fine_structure_speed,
     flow,
+    fundament,
     geometry,
     greek_wheel,
     hydrogen,
@@ -110,6 +111,7 @@ from . import (
 __version__ = "13.0"
 __all__ = [
     "geometry",
+    "fundament",
     "assembly",
     "breathing",
     "cards",
