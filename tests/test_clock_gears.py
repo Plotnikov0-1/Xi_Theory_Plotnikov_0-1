@@ -18,6 +18,11 @@ def test_teeth_totals():
     t = G.teeth_totals()
     assert t["малые"] == 72 and t["кольца"] == 80 and t["всего"] == 152
 
+def test_hypocycloid_cusps():
+    h = G.hypocycloid_cusps()
+    assert h["10-колесо (φ)"]["cusps"] == 4 and h["8-колесо (√2)"]["cusps"] == 5
+    assert h["= узел 9 (Sum-9)"]
+
 def test_dodeca_and_families():
     d = G.dodecahedron_is_phi_symmetry()
     assert d["|G| икосаэдра"] == 120 and d["3 держателя × 4 колеса"] == 12
