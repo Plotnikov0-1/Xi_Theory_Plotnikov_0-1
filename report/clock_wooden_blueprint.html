@@ -3,13 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Чертёж деревянных часов · 3 слоя · чёрные √2 · белые π · φ пусто</title>
+<title>Чертёж деревянных часов · 12 равностор. треугольников · 3 слоя</title>
 <!--
-  ЧЕРТЁЖ деревянных часов (3 слоя), по описанию автора:
-  СЛОЙ 1 (низ): 12 кругов МЕЖДУ числами (полупозиции), касаются соседей (r=R·sin15°).
-  СЛОЙ 2 (чёрные): 4 круга на 2,5,8,11 = √2-семья.
-  СЛОЙ 3 (белые): 4 круга на 3,6,9,12 = π-семья; наезжают на чёрные пополам (везика).
-  На 1,4,7,10 кругов НЕТ = φ-семья = КАНАЛЫ (пусто). ◇ qmt/clock_circles.py
+  ЧЕРТЁЖ деревянных часов (исправлено по автору):
+  ЗВЕЗДА = 12 РАВНОСТОРОННИХ треугольников (по одному на число), ВЕРШИНОЙ ВНУТРЬ,
+    основание ±15° (между числами = полупозиции), вершина на радиусе 2·sin15°·R.
+    ◇ тождество: радиус вершины = длина основания = 0.5176·R.
+  3 СЛОЯ = та же звезда 3 размеров (ширина ребра): массивный → меньше → меньше.
+  КРУГИ (12 между числами, касаются/наезжают) + чёрные {2,5,8,11}=√2,
+    белые {3,6,9,12}=π, φ {1,4,7,10} пусто=каналы. Начинать с 12.
+  ◇ qmt/clock_circles.py
 -->
 <style>
   :root{--pi:#7FB0E6;--rt2:#C98A5A;--phi:#F2C879;--ring:#a9925f;--ink:#DCE3F0;--mut:#828FA9;}
@@ -30,22 +33,21 @@
 <body>
 <canvas id="cv"></canvas>
 <div class="cap">
-  <div class="eyebrow">3 слоя · чёрные {2,5,8,11}=√2 · белые {3,6,9,12}=π · {1,4,7,10}=φ пусто · ◇</div>
-  <h1>Чертёж деревянных часов</h1>
+  <div class="eyebrow">12 равностор. треугольников вершиной внутрь · вершина=основание=2sin15°·R · ◇</div>
+  <h1>Чертёж деревянных часов — 3 слоя</h1>
 </div>
 <div class="toggle">
-  <button id="bStar" class="on">звезда (лучи)</button>
-  <button id="bL1" class="on">слой 1 · 12 кругов</button>
-  <button id="bL2" class="on">слой 2 · чёрные √2</button>
-  <button id="bL3" class="on">слой 3 · белые π</button>
+  <button id="bTri" class="on">3 слоя треугольников</button>
+  <button id="bL1" class="on">12 кругов (между)</button>
+  <button id="bL2" class="on">чёрные √2</button>
+  <button id="bL3" class="on">белые π</button>
   <button id="bCh" class="on">φ каналы (пусто)</button>
   <button id="bNum" class="on">числа</button>
 </div>
 <div class="legend">
-  <span class="sw" style="background:#dfe6f0;border-color:#7FB0E6"></span>белые {3,6,9,12} = π (верх)<br>
-  <span class="sw" style="background:#10131a;border-color:#C98A5A"></span>чёрные {2,5,8,11} = √2 (середина)<br>
-  <span class="sw" style="background:transparent;border-color:#a9925f"></span>12 кругов между числами (низ, касаются)<br>
-  <span class="sw" style="background:transparent;border:1px dashed #F2C879"></span>{1,4,7,10} = φ КАНАЛЫ (пусто)
+  <span class="sw" style="background:#dfe6f0;border-color:#7FB0E6"></span>белые {3,6,9,12}=π · <span class="sw" style="background:#10131a;border-color:#C98A5A"></span>чёрные {2,5,8,11}=√2<br>
+  <span class="sw" style="background:transparent;border-color:#a9925f"></span>12 кругов между числами (наезжают) · <span class="sw" style="background:transparent;border:1px dashed #F2C879"></span>{1,4,7,10}=φ пусто<br>
+  звезда = 12 равностор. треугольников вершиной внутрь · 3 слоя (масс.→меньше) · старт с 12
 </div>
 
 <script>
@@ -54,60 +56,68 @@
   var W,H,DPR=Math.min(window.devicePixelRatio||1,2);
   function resize(){W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
   addEventListener('resize',resize);resize();
-  var show={star:true,l1:true,l2:true,l3:true,ch:true,num:true};
+  var show={tri:true,l1:true,l2:true,l3:true,ch:true,num:true};
   function tog(id,k){var b=document.getElementById(id);b.onclick=function(){show[k]=!show[k];b.classList.toggle('on',show[k]);};}
-  tog('bStar','star');tog('bL1','l1');tog('bL2','l2');tog('bL3','l3');tog('bCh','ch');tog('bNum','num');
+  tog('bTri','tri');tog('bL1','l1');tog('bL2','l2');tog('bL3','l3');tog('bCh','ch');tog('bNum','num');
 
   var BLACK=[2,5,8,11], WHITE=[3,6,9,12], CH=[1,4,7,10];
-  function ang(u){return (u*30-90)*Math.PI/180;}      // u в часах (12 наверх)
+  function ang(u){return (u*30-90)*Math.PI/180;}
   function P(u,R,cx,cy){var a=ang(u);return [cx+R*Math.cos(a),cy+R*Math.sin(a)];}
+  var S15=Math.sin(Math.PI/12), C15=Math.cos(Math.PI/12), APEX=2*S15; // радиус вершины / R
 
+  // равносторонний треугольник при числе k, вершиной внутрь:
+  //  углы основания на k±0.5 (полупозиции) на радиусе R; вершина на радиусе APEX·R по k
+  function triangle(k,R,cx,cy,col,w,fill){
+    var A=P(k-0.5,R,cx,cy), B=P(k+0.5,R,cx,cy), Apex=P(k,APEX*R,cx,cy);
+    ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.lineTo(Apex[0],Apex[1]);ctx.closePath();
+    if(fill){ctx.fillStyle=fill;ctx.globalAlpha=0.5;ctx.fill();ctx.globalAlpha=1;}
+    ctx.strokeStyle=col;ctx.lineWidth=w;ctx.globalAlpha=0.9;ctx.stroke();ctx.globalAlpha=1;
+  }
   function circle(x,y,r,fill,stroke,w,dash){ctx.beginPath();ctx.arc(x,y,r,0,7);
     if(dash)ctx.setLineDash(dash);
-    if(fill){ctx.fillStyle=fill;ctx.globalAlpha=0.92;ctx.fill();ctx.globalAlpha=1;}
-    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=w;ctx.globalAlpha=0.9;ctx.stroke();ctx.globalAlpha=1;}
+    if(fill){ctx.fillStyle=fill;ctx.globalAlpha=0.9;ctx.fill();ctx.globalAlpha=1;}
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=w;ctx.globalAlpha=0.92;ctx.stroke();ctx.globalAlpha=1;}
     ctx.setLineDash([]);}
 
   function frame(){
     requestAnimationFrame(frame);
-    var cx=W/2,cy=H/2+6,R=Math.min(W,H)*0.34;
-    var Rc=R*0.60, r=R*0.16;      // кольцо центров и радиус кругов
+    var cx=W/2,cy=H/2+6,R=Math.min(W,H)*0.36;
     var bg=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(W,H)*0.7);
     bg.addColorStop(0,'#0e1626');bg.addColorStop(1,'#0A0E1A');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
 
-    // 12-лучевая звезда (низ): внешние точки на числах, внутренние между
-    if(show.star){ctx.beginPath();
-      for(var u=0;u<=12.0001;u+=0.5){var rr=(Math.round(u)===u)?R*1.02:R*0.66;var p=P(u,rr,cx,cy);
-        if(u===0)ctx.moveTo(p[0],p[1]);else ctx.lineTo(p[0],p[1]);}
-      ctx.closePath();ctx.strokeStyle='#2a2013';ctx.fillStyle='#15110a';ctx.globalAlpha=0.6;ctx.fill();
-      ctx.lineWidth=1.4;ctx.globalAlpha=0.7;ctx.stroke();ctx.globalAlpha=1;}
+    // 3 СЛОЯ треугольников (та же звезда 3 размеров: массивный→меньше→меньше)
+    if(show.tri){
+      var layers=[[1.00,'#8a6f3e','#241a0d',3.2],[0.85,'#b8975a','#2e2312',2.4],[0.72,'#e6cf97','#3a2c16',1.6]];
+      layers.forEach(function(L){for(var k=1;k<=12;k++){triangle(k,R*L[0],cx,cy,L[1],L[3],L[2]);}});
+    }
 
-    // СЛОЙ 1: 12 кругов между числами (полупозиции u=0.5,1.5,...), касаются
-    if(show.l1){for(var k=0;k<12;k++){var p=P(k+0.5,Rc,cx,cy);
-      circle(p[0],p[1],Rc*Math.sin(Math.PI/12),null,'#a9925f',1.4,null);}}  // r=Rc·sin15°
+    // старт с 12: подсветка
+    triangle(12,R,cx,cy,'#F2C879',2.4,null);
 
-    // СЛОЙ 2: чёрные на 2,5,8,11
-    if(show.l2){BLACK.forEach(function(u){var p=P(u,Rc,cx,cy);circle(p[0],p[1],r,'#10131a','#C98A5A',1.6,null);});}
+    var Rc=APEX*R*0.98, rC=Rc*Math.sin(Math.PI/12)*1.35; // круги крупнее (наезжают)
 
-    // СЛОЙ 3: белые на 3,6,9,12 (верх, наезжают на чёрные)
-    if(show.l3){WHITE.forEach(function(u){var p=P(u,Rc,cx,cy);circle(p[0],p[1],r,'#dfe6f0','#7FB0E6',1.6,null);});}
+    // 12 кругов между числами (низ), наезжают на соседей
+    if(show.l1){for(var k=0;k<12;k++){var p=P(k+0.5,Rc,cx,cy);circle(p[0],p[1],rC,null,'#a9925f',1.6,null);}}
 
-    // φ каналы: 1,4,7,10 — пусто (пунктир)
-    if(show.ch){CH.forEach(function(u){var p=P(u,Rc,cx,cy);circle(p[0],p[1],r*0.7,null,'#F2C879',1.4,[4,3]);
-      ctx.font='9px ui-monospace,Menlo,monospace';ctx.fillStyle='#F2C879';ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText('φ',p[0],p[1]);});}
+    // чёрные √2 на 2,5,8,11
+    if(show.l2){BLACK.forEach(function(u){var p=P(u,Rc,cx,cy);circle(p[0],p[1],rC,'#10131a','#C98A5A',1.8,null);});}
+    // белые π на 3,6,9,12 (наезжают на чёрные пополам)
+    if(show.l3){WHITE.forEach(function(u){var p=P(u,Rc,cx,cy);circle(p[0],p[1],rC,'#dfe6f0','#7FB0E6',1.8,null);});}
+    // φ каналы 1,4,7,10 пусто
+    if(show.ch){CH.forEach(function(u){var p=P(u,Rc,cx,cy);circle(p[0],p[1],rC*0.6,null,'#F2C879',1.5,[5,4]);
+      ctx.font='10px ui-monospace,Menlo,monospace';ctx.fillStyle='#F2C879';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('φ',p[0],p[1]);});}
 
     // центр
     ctx.beginPath();ctx.arc(cx,cy,4,0,7);ctx.fillStyle='#B5613C';ctx.fill();
 
     // числа
-    if(show.num){for(var u=1;u<=12;u++){var p=P(u,R*0.90,cx,cy);
+    if(show.num){for(var u=1;u<=12;u++){var p=P(u,R*1.06,cx,cy);
       var col=(WHITE.indexOf(u)>=0)?'#9fb0cc':(BLACK.indexOf(u)>=0)?'#C98A5A':'#F2C879';
       ctx.font='bold 15px ui-monospace,Menlo,monospace';ctx.fillStyle=col;ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText(u===10?'10':String(u),p[0],p[1]);}}
+      ctx.fillText(String(u),p[0],p[1]);}}
 
     ctx.font='10px ui-monospace,Menlo,monospace';ctx.fillStyle='#6f7c95';ctx.textAlign='left';
-    ctx.fillText('чёрные=√2{2,5,8,11} · белые=π{3,6,9,12} · φ{1,4,7,10} пусто=каналы · 12 нижних касаются (r=R·sin15°)',14,H-16);
+    ctx.fillText('12 равностор.△ вершиной внутрь (вершина=основание=2sin15°R) · углы △ на полупозициях = 12 кругов · чёрн √2 / бел π / φ пусто',14,H-14);
   }
   requestAnimationFrame(frame);
 })();

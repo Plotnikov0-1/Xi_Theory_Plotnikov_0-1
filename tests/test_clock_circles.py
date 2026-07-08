@@ -17,6 +17,12 @@ def test_tangent_ring():
     assert t["касание (d=2r)"] and t["число кругов"] == 12
     assert abs(t["r/R"] - 0.2588) < 1e-3
 
+def test_equilateral_triangles():
+    t = CC.equilateral_ray_triangles(1.0)
+    assert t["число треугольников"] == 12
+    assert t["вершина = основание"]                    # ◇ радиус вершины = длина основания
+    assert abs(t["радиус вершины"] - 0.517638) < 1e-5
+
 def _run_all():
     fns=[v for k,v in sorted(globals().items()) if k.startswith('test_')]
     for fn in fns: fn(); print(f'  OK  {fn.__name__}')
