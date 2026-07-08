@@ -23,6 +23,11 @@ def test_equilateral_triangles():
     assert t["вершина = основание"]                    # ◇ радиус вершины = длина основания
     assert abs(t["радиус вершины"] - 0.517638) < 1e-5
 
+def test_inner_dodecagon_circles():
+    d = CC.inner_dodecagon_circles(1.0)
+    assert d["через 2 вершины (охват 1 ребро)"] and d["= ρ·√3/2 = ρ·cos30°"]
+    assert abs(d["внутр. пересечение соседних"] - 0.866025) < 1e-5
+
 def _run_all():
     fns=[v for k,v in sorted(globals().items()) if k.startswith('test_')]
     for fn in fns: fn(); print(f'  OK  {fn.__name__}')

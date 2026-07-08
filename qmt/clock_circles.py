@@ -76,6 +76,19 @@ def equilateral_ray_triangles(R: float = 1.0) -> dict:
             "старт": "с 12, вершиной внутрь"}
 
 
+def inner_dodecagon_circles(rho: float = 1.0) -> dict:
+    """◇ круги на РЁБРАХ внутреннего 12-угольника: каждый касается 2 вершин
+    (радиус ρ·sin15°, центр ρ·cos15°); соседние круги встречаются в общей вершине (ρ)
+    и во ВНУТРЕННЕЙ точке ρ·√3/2 = ρ·cos30° — туда попадает вершина треугольника."""
+    r = rho * math.sin(math.radians(15))
+    cr = rho * math.cos(math.radians(15))
+    inner_meet = rho * math.sqrt(3) / 2
+    return {"радиус круга (полребра)": round(r, 6), "центр круга (ρcos15°)": round(cr, 6),
+            "через 2 вершины (охват 1 ребро)": True,
+            "внутр. пересечение соседних": round(inner_meet, 6),
+            "= ρ·√3/2 = ρ·cos30°": abs(inner_meet - rho * math.cos(math.radians(30))) < 1e-12}
+
+
 def vesica_black_white() -> dict:
     """○ чёрный(2..) и белый(3..) — соседи 30°, наезжают пополам (везика)."""
     return {"пара пример": "2↔3 (30°)", "наезд": "vesica piscis",
