@@ -28,6 +28,11 @@ def test_inner_dodecagon_circles():
     assert d["через 2 вершины (охват 1 ребро)"] and d["= ρ·√3/2 = ρ·cos30°"]
     assert abs(d["внутр. пересечение соседних"] - 0.866025) < 1e-5
 
+def test_scale_six_across():
+    s = CC.scale_six_across(1.0)
+    assert abs(s["кругов на диаметр при R√2/4"] - 5.657) < 1e-2   # 4√2 ≈ 5.66 ≈ 6
+    assert s["круг вписан в луч-треугольник"]
+
 def _run_all():
     fns=[v for k,v in sorted(globals().items()) if k.startswith('test_')]
     for fn in fns: fn(); print(f'  OK  {fn.__name__}')

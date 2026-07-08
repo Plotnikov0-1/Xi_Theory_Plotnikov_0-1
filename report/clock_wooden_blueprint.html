@@ -3,15 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Чертёж деревянных часов · внутр. 12-угольник · круги на рёбрах · полосы</title>
+<title>Чертёж часов · масштаб кругов (6 на диаметр) · подгонка</title>
 <!--
-  ЧЕРТЁЖ (уточнено по автору):
-  ВНУТРЕННИЙ 12-УГОЛЬНИК (вершины = вершины треугольников).
-  КРУГИ на его РЁБРАХ: каждый касается 2 вершин (охватывает ребро), радиус ρ·sin15°.
-  Соседние круги встречаются в вершине (ρ) и во внутр. точке ρ·√3/2 — туда вершина △.
-  3 СЛОЯ близкого размера (1.00→0.94→0.88). Рёбра = ПОЛОСЫ (внеш.+внутр. линия).
-  чёрные {2,5,8,11}=√2 · белые {3,6,9,12}=π · φ {1,4,7,10} пусто. Старт с 12.
-  ◇ qmt/clock_circles.py
+  ЧЕРТЁЖ с ПОДГОНКОЙ МАСШТАБА (по автору): ~6 кругов на диаметр (r≈R/6),
+  точнее «4 кольца между 12–3» (хорда 90°=R√2 → d=R√2/4). Круг вписан в луч-△.
+  Ползунок «размер круга» — двигай, пока не совпадёт с фото. Линейка внизу считает.
+  Звезда = 12 равностор. треугольников вершиной внутрь, 3 слоя близко.
+  чёрн {2,5,8,11}=√2 · бел {3,6,9,12}=π · φ {1,4,7,10} пусто. ◇ qmt/clock_circles.py
 -->
 <style>
   :root{--pi:#7FB0E6;--rt2:#C98A5A;--phi:#F2C879;--ring:#a9925f;--ink:#DCE3F0;--mut:#828FA9;}
@@ -25,28 +23,37 @@
   .toggle{position:fixed;right:12px;top:56px;display:flex;gap:6px;flex-direction:column}
   button{font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;letter-spacing:.03em;background:#141C2E;color:var(--ink);border:1px solid #20293D;border-radius:5px;padding:6px 9px;cursor:pointer;text-transform:uppercase}
   button.on{border-color:var(--phi);color:var(--phi)}
-  .legend{position:fixed;left:12px;bottom:12px;font-family:ui-monospace,Menlo,monospace;font-size:10px;color:var(--mut);line-height:1.7;pointer-events:none}
-  .sw{display:inline-block;width:13px;height:13px;border-radius:50%;margin-right:6px;vertical-align:middle;border:1px solid #333}
+  .ctl{position:fixed;left:12px;bottom:44px;right:12px;display:flex;gap:8px;align-items:center;font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--mut);flex-wrap:wrap}
+  input[type=range]{flex:1;min-width:120px;accent-color:var(--phi)}
+  .snap{background:#141C2E;border:1px solid #20293D;color:#9fb0cc;border-radius:4px;padding:3px 6px;cursor:pointer;font-size:10px}
+  .legend{position:fixed;left:12px;bottom:12px;font-family:ui-monospace,Menlo,monospace;font-size:10px;color:var(--mut);line-height:1.6;pointer-events:none}
 </style>
 </head>
 <body>
 <canvas id="cv"></canvas>
 <div class="cap">
-  <div class="eyebrow">внутр. 12-угольник · круги на рёбрах (касаются 2 вершин) · вершина △ = ρ·√3/2 · ◇</div>
-  <h1>Чертёж деревянных часов — v2</h1>
+  <div class="eyebrow">масштаб кругов: ~6 на диаметр (r≈R/6) · круг вписан в △ · подгонка ползунком</div>
+  <h1>Чертёж часов — масштаб</h1>
 </div>
 <div class="toggle">
-  <button id="b12" class="on">внутр. 12-угольник</button>
-  <button id="bTri" class="on">3 слоя (полосы)</button>
-  <button id="bL1" class="on">12 кругов (рёбра)</button>
-  <button id="bFam" class="on">чёрн √2 / бел π</button>
-  <button id="bCh" class="on">φ пусто</button>
+  <button id="bTri" class="on">3 слоя △</button>
+  <button id="bCirc" class="on">12 кругов</button>
+  <button id="bFam" class="on">чёрн/бел/φ</button>
+  <button id="bRule" class="on">линейка (÷ диаметр)</button>
   <button id="bNum" class="on">числа</button>
 </div>
+<div class="ctl">
+  <span>размер круга r/R</span>
+  <input type="range" id="Rr" min="0.08" max="0.26" step="0.001" value="0.1667">
+  <span class="val" id="rv">0.167</span>
+  <span class="snap" data-r="0.16667">6 на ⌀ (R/6)</span>
+  <span class="snap" data-r="0.17678">R√2/8</span>
+  <span>наезд</span>
+  <input type="range" id="Ov" min="0.0" max="0.5" step="0.01" value="0.15" style="max-width:90px">
+</div>
 <div class="legend">
-  <span class="sw" style="background:#dfe6f0;border-color:#7FB0E6"></span>белые {3,6,9,12}=π · <span class="sw" style="background:#10131a;border-color:#C98A5A"></span>чёрные {2,5,8,11}=√2<br>
-  <span class="sw" style="background:transparent;border-color:#a9925f"></span>12 кругов на рёбрах 12-угольника (касаются 2 вершин)<br>
-  рёбра △ = полосы · 3 слоя близко (1.00→0.94→0.88) · вершина △ в пересечении кругов
+  бел {3,6,9,12}=π · чёрн {2,5,8,11}=√2 · φ {1,4,7,10} пусто · старт 12<br>
+  двигай «размер круга», пока не совпадёт с фото · линейка внизу считает кругов на диаметр
 </div>
 
 <script>
@@ -55,67 +62,70 @@
   var W,H,DPR=Math.min(window.devicePixelRatio||1,2);
   function resize(){W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
   addEventListener('resize',resize);resize();
-  var show={p12:true,tri:true,l1:true,fam:true,ch:true,num:true};
+  var show={tri:true,circ:true,fam:true,rule:true,num:true};
   function tog(id,k){var b=document.getElementById(id);b.onclick=function(){show[k]=!show[k];b.classList.toggle('on',show[k]);};}
-  tog('b12','p12');tog('bTri','tri');tog('bL1','l1');tog('bFam','fam');tog('bCh','ch');tog('bNum','num');
+  tog('bTri','tri');tog('bCirc','circ');tog('bFam','fam');tog('bRule','rule');tog('bNum','num');
+  var RR=0.1667, OV=0.15;
+  var rs=document.getElementById('Rr'),rv=document.getElementById('rv'),ov=document.getElementById('Ov');
+  rs.oninput=function(){RR=parseFloat(rs.value);rv.textContent=RR.toFixed(3);};
+  ov.oninput=function(){OV=parseFloat(ov.value);};
+  document.querySelectorAll('.snap').forEach(function(s){s.onclick=function(){RR=parseFloat(s.dataset.r);rs.value=RR;rv.textContent=RR.toFixed(3);};});
 
   var BLACK=[2,5,8,11], WHITE=[3,6,9,12], CH=[1,4,7,10];
-  var S15=Math.sin(Math.PI/12), C15=Math.cos(Math.PI/12);
+  var S15=Math.sin(Math.PI/12);
   function ang(u){return (u*30-90)*Math.PI/180;}
   function P(u,R,cx,cy){var a=ang(u);return [cx+R*Math.cos(a),cy+R*Math.sin(a)];}
 
   function frame(){
     requestAnimationFrame(frame);
-    var cx=W/2,cy=H/2+6,R=Math.min(W,H)*0.40;   // R = радиус вершин треугольников (основания)
-    // rho = радиус внутреннего 12-угольника = вершины треугольников (внутрь)
-    var rho=R*2*S15;                              // = 0.5176 R
+    var cx=W/2,cy=H/2+4,R=Math.min(W,H)*0.40;
+    var rC=RR*R;                         // радиус круга по ползунку
+    // кольцо центров: круги наезжают друг на друга по параметру OV (0=касание)
+    var Rc=(rC/S15)*(1-OV);              // при OV=0 — касание соседей; больше — наезд
+    var apex=2*S15;                      // вершина △
     var bg=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(W,H)*0.7);
     bg.addColorStop(0,'#0e1626');bg.addColorStop(1,'#0A0E1A');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
 
-    // 3 СЛОЯ треугольников-ПОЛОС, близкий размер (1.00→0.94→0.88)
-    if(show.tri){var layers=[[1.00,'#7a6236',8],[0.94,'#a98a52',5.5],[0.88,'#dcc590',3]];
-      layers.forEach(function(L){var s=L[0];
-        for(var k=1;k<=12;k++){
-          var A=P(k-0.5,R*s,cx,cy),B=P(k+0.5,R*s,cx,cy),Ap=P(k,rho*s,cx,cy);
-          ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.lineTo(Ap[0],Ap[1]);ctx.closePath();
-          ctx.strokeStyle=L[1];ctx.lineWidth=L[2];ctx.globalAlpha=0.85;ctx.lineJoin='round';ctx.stroke();ctx.globalAlpha=1;
-        }});}
-    // старт с 12
-    (function(){var A=P(11.5,R,cx,cy),B=P(12.5,R,cx,cy),Ap=P(12,rho,cx,cy);
+    // 3 слоя треугольников близко
+    if(show.tri){[[1.00,'#7a6236',7],[0.94,'#a98a52',5],[0.88,'#dcc590',3]].forEach(function(L){var s=L[0];
+      for(var k=1;k<=12;k++){var A=P(k-0.5,R*s,cx,cy),B=P(k+0.5,R*s,cx,cy),Ap=P(k,apex*R*s,cx,cy);
+        ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.lineTo(Ap[0],Ap[1]);ctx.closePath();
+        ctx.strokeStyle=L[1];ctx.lineWidth=L[2];ctx.lineJoin='round';ctx.globalAlpha=0.85;ctx.stroke();ctx.globalAlpha=1;}});
+      var A=P(11.5,R,cx,cy),B=P(12.5,R,cx,cy),Ap=P(12,apex*R,cx,cy);
       ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.lineTo(Ap[0],Ap[1]);ctx.closePath();
-      ctx.strokeStyle='#F2C879';ctx.lineWidth=2;ctx.globalAlpha=0.9;ctx.stroke();ctx.globalAlpha=1;})();
+      ctx.strokeStyle='#F2C879';ctx.lineWidth=2;ctx.stroke();}
 
-    // внутренний 12-угольник (вершины на числах, радиус rho)
-    if(show.p12){ctx.beginPath();for(var k=1;k<=12;k++){var V=P(k,rho,cx,cy);if(k===1)ctx.moveTo(V[0],V[1]);else ctx.lineTo(V[0],V[1]);}
-      ctx.closePath();ctx.strokeStyle='#5a6b52';ctx.lineWidth=1.4;ctx.globalAlpha=0.7;ctx.stroke();ctx.globalAlpha=1;}
+    // 12 кругов (крупные, наезжают) — на полупозициях
+    if(show.circ){for(var k=0;k<12;k++){var p=P(k+0.5,Rc,cx,cy);
+      ctx.beginPath();ctx.arc(p[0],p[1],rC,0,7);ctx.strokeStyle='#a9925f';ctx.lineWidth=1.8;ctx.globalAlpha=0.9;ctx.stroke();ctx.globalAlpha=1;}}
 
-    // 12 кругов на РЁБРАХ 12-угольника: центр на полупозиции (ρcos15), радиус ρsin15
-    var cR=rho*C15, rC=rho*S15;
-    if(show.l1){for(var e=0;e<12;e++){var M=P(e+0.5,cR,cx,cy);
-      ctx.beginPath();ctx.arc(M[0],M[1],rC,0,7);ctx.strokeStyle='#a9925f';ctx.lineWidth=1.6;ctx.globalAlpha=0.9;ctx.stroke();ctx.globalAlpha=1;}}
-
-    // семейные круги на вершинах 12-угольника (числах): чёрные √2 / белые π
+    // семейные круги на числах
     if(show.fam){
-      BLACK.forEach(function(u){var V=P(u,rho,cx,cy);ctx.beginPath();ctx.arc(V[0],V[1],rC*0.9,0,7);
-        ctx.fillStyle='#10131a';ctx.globalAlpha=0.9;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle='#C98A5A';ctx.lineWidth=1.6;ctx.stroke();});
-      WHITE.forEach(function(u){var V=P(u,rho,cx,cy);ctx.beginPath();ctx.arc(V[0],V[1],rC*0.9,0,7);
-        ctx.fillStyle='#dfe6f0';ctx.globalAlpha=0.9;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle='#7FB0E6';ctx.lineWidth=1.6;ctx.stroke();});
-    }
-    // φ пусто на 1,4,7,10
-    if(show.ch){CH.forEach(function(u){var V=P(u,rho,cx,cy);ctx.setLineDash([5,4]);
-      ctx.beginPath();ctx.arc(V[0],V[1],rC*0.6,0,7);ctx.strokeStyle='#F2C879';ctx.lineWidth=1.4;ctx.globalAlpha=0.9;ctx.stroke();ctx.globalAlpha=1;ctx.setLineDash([]);
-      ctx.font='9px ui-monospace,Menlo,monospace';ctx.fillStyle='#F2C879';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('φ',V[0],V[1]);});}
+      BLACK.forEach(function(u){var p=P(u,Rc,cx,cy);ctx.beginPath();ctx.arc(p[0],p[1],rC,0,7);
+        ctx.fillStyle='#10131a';ctx.globalAlpha=0.85;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle='#C98A5A';ctx.lineWidth=1.8;ctx.stroke();});
+      WHITE.forEach(function(u){var p=P(u,Rc,cx,cy);ctx.beginPath();ctx.arc(p[0],p[1],rC,0,7);
+        ctx.fillStyle='#dfe6f0';ctx.globalAlpha=0.85;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle='#7FB0E6';ctx.lineWidth=1.8;ctx.stroke();});
+      CH.forEach(function(u){var p=P(u,Rc,cx,cy);ctx.setLineDash([5,4]);ctx.beginPath();ctx.arc(p[0],p[1],rC*0.6,0,7);
+        ctx.strokeStyle='#F2C879';ctx.lineWidth=1.4;ctx.globalAlpha=0.9;ctx.stroke();ctx.globalAlpha=1;ctx.setLineDash([]);});}
 
-    // центр
     ctx.beginPath();ctx.arc(cx,cy,3,0,7);ctx.fillStyle='#B5613C';ctx.fill();
 
     // числа
-    if(show.num){for(var u=1;u<=12;u++){var p=P(u,R*1.10,cx,cy);
-      var col=(WHITE.indexOf(u)>=0)?'#9fb0cc':(BLACK.indexOf(u)>=0)?'#C98A5A':'#F2C879';
-      ctx.font='bold 15px ui-monospace,Menlo,monospace';ctx.fillStyle=col;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(u),p[0],p[1]);}}
+    if(show.num){for(var u=1;u<=12;u++){var p=P(u,R*1.08,cx,cy);
+      var c=(WHITE.indexOf(u)>=0)?'#9fb0cc':(BLACK.indexOf(u)>=0)?'#C98A5A':'#F2C879';
+      ctx.font='bold 14px ui-monospace,Menlo,monospace';ctx.fillStyle=c;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(u),p[0],p[1]);}}
+
+    // ЛИНЕЙКА: сколько кругов ⌀ помещается в диаметр 2R
+    if(show.rule){var y=cy+R+30, d=2*rC, x0=cx-R, n=2*R/d;
+      ctx.strokeStyle='#5a6b52';ctx.lineWidth=1;ctx.globalAlpha=0.8;
+      ctx.beginPath();ctx.moveTo(x0,y);ctx.lineTo(cx+R,y);ctx.stroke();
+      for(var i=0;i<=Math.ceil(n);i++){var xx=x0+i*d;if(xx>cx+R+1)break;
+        ctx.beginPath();ctx.moveTo(xx,y-5);ctx.lineTo(xx,y+5);ctx.stroke();}
+      ctx.globalAlpha=1;ctx.font='11px ui-monospace,Menlo,monospace';ctx.fillStyle='#9fb0cc';ctx.textAlign='center';
+      ctx.fillText('кругов на диаметр: '+n.toFixed(2)+'  (цель ≈ 6)',cx,y+20);}
 
     ctx.font='10px ui-monospace,Menlo,monospace';ctx.fillStyle='#6f7c95';ctx.textAlign='left';
-    ctx.fillText('внутр.12-угольник (вершины=вершины △) · круг на ребре касается 2 вершин · вершина △ = ρ√3/2 · 3 слоя-полосы близко',14,H-14);
+    ctx.fillText('двигай «размер круга» пока не совпадёт с фото · r/R='+RR.toFixed(3)+' · круг вписан в луч-△ · чёрн √2 / бел π / φ пусто',14,H-14);
   }
   requestAnimationFrame(frame);
 })();
