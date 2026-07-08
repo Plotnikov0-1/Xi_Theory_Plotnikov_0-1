@@ -107,6 +107,19 @@ def scale_six_across(R: float = 1.0) -> dict:
             "круг вписан в луч-треугольник": True}
 
 
+def black_white_tangency(rho: float = 1.0, r: float = 0.6) -> dict:
+    """◇ белый и чёрный круги на РАЗНОЙ глубине к внутр. 12-угольнику (радиус ρ):
+    белый — центр ρ+r, касается ТОЛЬКО своей вершины (мелко);
+    чёрный — уходит глубже, центр ρ·cos30°−√(r²−(ρ/2)²), касается ДВУХ соседей.
+    Условие касания двух соседей: r ≥ ρ/2."""
+    disc = r * r - (rho * math.sin(math.radians(30))) ** 2
+    cb = rho * math.cos(math.radians(30)) - math.sqrt(disc) if disc >= 0 else None
+    return {"белый центр (касается 1 верш.)": round(rho + r, 5),
+            "чёрный центр (касается 2 соседей)": round(cb, 5) if cb is not None else None,
+            "чёрный глубже белого": (cb is not None and cb < rho + r),
+            "условие r≥ρ/2": r >= rho / 2}
+
+
 def print_report() -> None:
     print("═" * 78)
     print("  ДЕРЕВЯННЫЕ ЧАСЫ — 3 слоя = три семьи; φ-каналы ПУСТЫ")

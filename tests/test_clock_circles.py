@@ -33,6 +33,11 @@ def test_scale_six_across():
     assert abs(s["кругов на диаметр при R√2/4"] - 5.657) < 1e-2   # 4√2 ≈ 5.66 ≈ 6
     assert s["круг вписан в луч-треугольник"]
 
+def test_black_white_tangency():
+    t = CC.black_white_tangency(1.0, 0.6)
+    assert t["условие r≥ρ/2"] and t["чёрный глубже белого"]
+    assert t["чёрный центр (касается 2 соседей)"] is not None
+
 def _run_all():
     fns=[v for k,v in sorted(globals().items()) if k.startswith('test_')]
     for fn in fns: fn(); print(f'  OK  {fn.__name__}')
