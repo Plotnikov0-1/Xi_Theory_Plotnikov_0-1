@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Три вложенных 12-угольника · {12/3}=√3−1 · три семьи</title>
+<!--
+  ТРИ ВЛОЖЕННЫХ 12-УГОЛЬНИКА (по чертежу автора). Отношение — ползунком (подгонка).
+  ◇ {12/3} 3 квадрата = НАШИ 3 СЕМЬИ → внутр.12-угольник = √3−1=0.732.
+  ◇ {12/4} 4 треугольника (30°) → √(2−√3)=2sin15°=0.518.
+  ◇ {12/5} додекаграмма → 2−√3=tan15°=0.268.  {12/2} 2 шестиуг. → 0.897.
+  qmt/dodecagon_nest.py · qmt/clock_circles.py
+-->
+<style>
+  :root{--pi:#7FB0E6;--rt2:#C98A5A;--phi:#F2C879;--ring:#a9925f;--ink:#DCE3F0;--mut:#828FA9;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:#0A0E1A}
+  body{font-family:'Iowan Old Style',Georgia,serif;color:var(--ink)}
+  #cv{display:block;width:100vw;height:100vh}
+  .cap{position:fixed;left:0;right:0;top:0;padding:13px 18px;pointer-events:none;background:linear-gradient(180deg,rgba(10,14,26,.85),rgba(10,14,26,0))}
+  .eyebrow{font-family:'Helvetica Neue',Arial,sans-serif;text-transform:uppercase;letter-spacing:.2em;font-size:10px;font-weight:700;color:var(--mut)}
+  h1{font-family:'Helvetica Neue',Arial,sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.03em;font-size:clamp(12px,2.6vw,19px);margin-top:5px;color:var(--phi)}
+  .toggle{position:fixed;right:12px;top:56px;display:flex;gap:6px;flex-direction:column}
+  button{font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;letter-spacing:.03em;background:#141C2E;color:var(--ink);border:1px solid #20293D;border-radius:5px;padding:6px 9px;cursor:pointer;text-transform:uppercase}
+  button.on{border-color:var(--phi);color:var(--phi)}
+  .ctl{position:fixed;left:12px;bottom:44px;right:12px;display:flex;gap:8px;align-items:center;font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--mut);flex-wrap:wrap}
+  input[type=range]{flex:1;min-width:120px;accent-color:var(--phi)}
+  .snap{background:#141C2E;border:1px solid #20293D;color:#9fb0cc;border-radius:4px;padding:3px 6px;cursor:pointer;font-size:10px}
+  .legend{position:fixed;left:12px;bottom:12px;font-family:ui-monospace,Menlo,monospace;font-size:10px;color:var(--mut);line-height:1.6;pointer-events:none}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div class="cap">
+  <div class="eyebrow">три 12-угольника · {12/3} три семьи = √3−1 · подгонка ползунком · ◇</div>
+  <h1>Три вложенных 12-угольника</h1>
+</div>
+<div class="toggle">
+  <button id="bSq" class="on">3 семьи {12/3}</button>
+  <button id="bStar">лучи (тре-ки)</button>
+  <button id="bCirc" class="on">круги (внутр.)</button>
+  <button id="bFam" class="on">чёрн/бел/φ</button>
+  <button id="bLet">буквы 36</button>
+  <button id="bNum" class="on">числа</button>
+</div>
+<div class="ctl">
+  <span>отношение q</span>
+  <input type="range" id="Q" min="0.20" max="0.98" step="0.001" value="0.7321">
+  <span class="val" id="qv">0.732</span>
+  <span class="snap" data-q="0.896575">{12/2}</span>
+  <span class="snap" data-q="0.732051">{12/3} семьи √3−1</span>
+  <span class="snap" data-q="0.517638">{12/4} 2sin15</span>
+  <span class="snap" data-q="0.267949">{12/5} 2−√3</span>
+</div>
+<div class="legend">
+  три кольца по 12 (радиусы R · Rq · Rq²) · три квадрата = семьи (φ золото / √2 медь / π синий)<br>
+  круги на рёбрах внутр. 12-угольника · чёрн {2,5,8,11}=√2 · бел {3,6,9,12}=π · φ {1,4,7,10} пусто
+</div>
+
+<script>
+(function(){
+  var cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+  var W,H,DPR=Math.min(window.devicePixelRatio||1,2);
+  function resize(){W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
+  addEventListener('resize',resize);resize();
+  var show={sq:true,star:false,circ:true,fam:true,let:false,num:true};
+  function tog(id,k){var b=document.getElementById(id);b.onclick=function(){show[k]=!show[k];b.classList.toggle('on',show[k]);};}
+  tog('bSq','sq');tog('bStar','star');tog('bCirc','circ');tog('bFam','fam');tog('bLet','let');tog('bNum','num');
+  var Q=0.7321;var qs=document.getElementById('Q'),qv=document.getElementById('qv');
+  qs.oninput=function(){Q=parseFloat(qs.value);qv.textContent=Q.toFixed(3);};
+  document.querySelectorAll('.snap').forEach(function(s){s.onclick=function(){Q=parseFloat(s.dataset.q);qs.value=Q;qv.textContent=Q.toFixed(3);};});
+
+  var COL={0:'#7FB0E6',1:'#F2C879',2:'#C98A5A'};   // π / φ / √2
+  function fam(k){return ((k%12)+12)%3;}
+  function ang(u){return (u*30-90)*Math.PI/180;}
+  function P(u,R,cx,cy){var a=ang(u);return [cx+R*Math.cos(a),cy+R*Math.sin(a)];}
+  var LET="ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+  function poly(R,cx,cy,col,w,al){ctx.beginPath();for(var k=1;k<=12;k++){var V=P(k,R,cx,cy);if(k===1)ctx.moveTo(V[0],V[1]);else ctx.lineTo(V[0],V[1]);}
+    ctx.closePath();ctx.strokeStyle=col;ctx.lineWidth=w;ctx.globalAlpha=al;ctx.stroke();ctx.globalAlpha=1;}
+
+  function frame(){
+    requestAnimationFrame(frame);
+    var cx=W/2,cy=H/2+4,R=Math.min(W,H)*0.36;
+    var R1=R, R2=R*Q, R3=R*Q*Q;
+    var bg=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(W,H)*0.7);
+    bg.addColorStop(0,'#0e1626');bg.addColorStop(1,'#0A0E1A');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+    // три 12-угольника
+    poly(R1,cx,cy,'#3a5f8f',1.8,0.85);
+    poly(R2,cx,cy,'#3a5f8f',1.5,0.7);
+    poly(R3,cx,cy,'#3a5f8f',1.3,0.6);
+
+    // лучи-треугольники: соединяем внешние вершины через шаг (звезда)
+    if(show.star){for(var k=1;k<=12;k++){var A=P(k,R1,cx,cy),B=P(k,R3,cx,cy);
+      ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.strokeStyle='#4a5568';ctx.lineWidth=1;ctx.globalAlpha=0.5;ctx.stroke();ctx.globalAlpha=1;}}
+
+    // три семьи = три квадрата {12/3} на внешнем 12-угольнике
+    if(show.sq){for(var f=0;f<3;f++){var start=[3,1,2][f];  // π{3..} φ{1..} √2{2..}
+      ctx.beginPath();for(var i=0;i<4;i++){var n=((start-1+3*i)%12)+1;var V=P(n,R1,cx,cy);if(i===0)ctx.moveTo(V[0],V[1]);else ctx.lineTo(V[0],V[1]);}
+      ctx.closePath();ctx.strokeStyle=COL[[0,1,2][f]];ctx.lineWidth=1.8;ctx.globalAlpha=0.6;ctx.stroke();ctx.globalAlpha=1;}}
+
+    // круги на рёбрах ВНУТРЕННЕГО 12-угольника (касаются 2 вершин)
+    var cR=R3*Math.cos(Math.PI/12), rC=R3*Math.sin(Math.PI/12);
+    if(show.circ){for(var e=0;e<12;e++){var M=P(e+0.5,cR,cx,cy);
+      ctx.beginPath();ctx.arc(M[0],M[1],rC,0,7);ctx.strokeStyle='#a9925f';ctx.lineWidth=1.6;ctx.globalAlpha=0.9;ctx.stroke();ctx.globalAlpha=1;}}
+
+    // семейные круги на вершинах внутр. 12-угольника
+    if(show.fam){[2,5,8,11].forEach(function(u){var V=P(u,R3,cx,cy);ctx.beginPath();ctx.arc(V[0],V[1],rC*0.85,0,7);
+        ctx.fillStyle='#10131a';ctx.globalAlpha=0.9;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle='#C98A5A';ctx.lineWidth=1.5;ctx.stroke();});
+      [3,6,9,12].forEach(function(u){var V=P(u,R3,cx,cy);ctx.beginPath();ctx.arc(V[0],V[1],rC*0.85,0,7);
+        ctx.fillStyle='#dfe6f0';ctx.globalAlpha=0.9;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle='#7FB0E6';ctx.lineWidth=1.5;ctx.stroke();});
+      [1,4,7,10].forEach(function(u){var V=P(u,R3,cx,cy);ctx.setLineDash([4,3]);ctx.beginPath();ctx.arc(V[0],V[1],rC*0.55,0,7);
+        ctx.strokeStyle='#F2C879';ctx.lineWidth=1.3;ctx.globalAlpha=0.9;ctx.stroke();ctx.globalAlpha=1;ctx.setLineDash([]);});}
+
+    // вершины 3 колец
+    [[R1,'#4d78ad'],[R2,'#6f7c95'],[R3,'#6f7c95']].forEach(function(L){for(var k=1;k<=12;k++){var V=P(k,L[0],cx,cy);
+      ctx.beginPath();ctx.arc(V[0],V[1],3,0,7);ctx.fillStyle=L[1];ctx.fill();}});
+
+    ctx.beginPath();ctx.arc(cx,cy,3,0,7);ctx.fillStyle='#B5613C';ctx.fill();
+
+    // буквы на 36 вершинах (по кольцам)
+    if(show.let){var idx=0;[R1,R2,R3].forEach(function(RR){for(var k=1;k<=12;k++){var V=P(k,RR*1.0,cx,cy);
+      ctx.font='10px ui-monospace,Menlo,monospace';ctx.fillStyle='#9fb0cc';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(LET[idx%26]+(idx>=26?'₁':''),V[0],V[1]-9);idx++;}});}
+
+    // числа на внешнем
+    if(show.num){for(var u=1;u<=12;u++){var p=P(u,R1*1.10,cx,cy);var c=COL[fam(u)];
+      ctx.font='bold 14px ui-monospace,Menlo,monospace';ctx.fillStyle=c;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(u),p[0],p[1]);}}
+
+    ctx.font='10px ui-monospace,Menlo,monospace';ctx.fillStyle='#6f7c95';ctx.textAlign='left';
+    ctx.fillText('q='+Q.toFixed(3)+'  ({12/3} три семьи = √3−1=0.732 · {12/4}=0.518 · {12/5}=0.268) · подгоняй по фото',14,H-14);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
