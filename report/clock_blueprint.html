@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Чертёж часов · n² (водород) · три квадрата · −I · ножницы</title>
+<!--
+  ЧЕРТЁЖ-КОПИЯ часов (наш собственный, для выбора геометрии).
+  ◇ час n → n² (вырождение водорода): 1,4,9,…,144.  10 = число (√100), не буква.
+  ◇ три квадрата Z₁₂/⟨3⟩: φ{1,4,7,10} · √2{2,5,8,11} · π{3,6,9,12}.
+  ◇ −I зеркало: диаметры k↔k+6.  центр = живое зеркало.
+  ○ стрелки-«ножницы»: угол-разрез (двигай ползунком). гексаграмма — как у Гранта.
+-->
+<style>
+  :root{--pi:#7FB0E6;--phi:#F2C879;--rt2:#C98A5A;--mir:#7FD8C4;--ink:#DCE3F0;--mut:#828FA9;--ember:#B5613C;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:#0A0E1A}
+  body{font-family:'Iowan Old Style',Georgia,serif;color:var(--ink)}
+  #cv{display:block;width:100vw;height:100vh}
+  .cap{position:fixed;left:0;right:0;top:0;padding:13px 18px;pointer-events:none;
+       background:linear-gradient(180deg,rgba(10,14,26,.85),rgba(10,14,26,0))}
+  .eyebrow{font-family:'Helvetica Neue',Arial,sans-serif;text-transform:uppercase;letter-spacing:.2em;font-size:10px;font-weight:700;color:var(--mut)}
+  h1{font-family:'Helvetica Neue',Arial,sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.03em;font-size:clamp(12px,2.6vw,19px);margin-top:5px;color:var(--phi)}
+  .toggle{position:fixed;right:12px;top:56px;display:flex;gap:6px;flex-direction:column}
+  button{font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;letter-spacing:.03em;background:#141C2E;color:var(--ink);border:1px solid #20293D;border-radius:5px;padding:6px 9px;cursor:pointer;text-transform:uppercase}
+  button.on{border-color:var(--phi);color:var(--phi)}
+  .ctl{position:fixed;left:12px;bottom:48px;right:12px;display:flex;gap:10px;align-items:center;font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--mut)}
+  input[type=range]{flex:1;accent-color:var(--phi)}
+  .legend{position:fixed;left:12px;bottom:12px;font-family:ui-monospace,Menlo,monospace;font-size:10px;color:var(--mut);line-height:1.7;pointer-events:none}
+  .sw{display:inline-block;width:13px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div class="cap">
+  <div class="eyebrow">час n → n² = вырождение водорода · три квадрата · −I · ◇</div>
+  <h1>Чертёж часов — наш собственный</h1>
+</div>
+<div class="toggle">
+  <button id="bN2" class="on">n² (водород)</button>
+  <button id="bSq" class="on">три квадрата</button>
+  <button id="bMir" class="on">−I зеркало</button>
+  <button id="bHex">гексаграмма (Грант)</button>
+  <button id="bHand" class="on">стрелки-ножницы</button>
+</div>
+<div class="ctl">
+  <span>угол стрелок</span>
+  <input type="range" id="Ang" min="0" max="330" step="30" value="90">
+  <span class="val" id="av">90°</span>
+</div>
+<div class="legend">
+  <span class="sw" style="background:#F2C879"></span>φ {1,4,7,10} · <span class="sw" style="background:#C98A5A"></span>√2 {2,5,8,11} · <span class="sw" style="background:#7FB0E6"></span>π {3,6,9,12}<br>
+  снаружи n² (водород) · внутри n · центр −I · диаметры = зеркало k↔k+6<br>
+  «начинать не с 1»: верх 12=√144=max · стрелки режут круг под углом
+</div>
+
+<script>
+(function(){
+  var cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+  var W,H,DPR=Math.min(window.devicePixelRatio||1,2);
+  function resize(){W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
+  addEventListener('resize',resize);resize();
+  var show={n2:true,sq:true,mir:true,hex:false,hand:true};
+  function tog(id,k){var b=document.getElementById(id);b.onclick=function(){show[k]=!show[k];b.classList.toggle('on',show[k]);};}
+  tog('bN2','n2');tog('bSq','sq');tog('bMir','mir');tog('bHex','hex');tog('bHand','hand');
+  var ANG=90;var as=document.getElementById('Ang'),av=document.getElementById('av');
+  as.oninput=function(){ANG=parseInt(as.value);av.textContent=ANG+'°';};
+
+  var COL={0:'#7FB0E6',1:'#F2C879',2:'#C98A5A'};
+  function fam(k){return ((k%12)+12)%3;}
+  function pos(k,R,cx,cy){var a=(k*30-90)*Math.PI/180;return [cx+R*Math.cos(a),cy+R*Math.sin(a)];}
+  var N2={1:1,2:4,3:9,4:16,5:25,6:36,7:49,8:64,9:81,10:100,11:121,12:144};
+
+  function frame(ts){
+    requestAnimationFrame(frame);
+    var cx=W/2,cy=H/2+6,R=Math.min(W,H)*0.32;
+    var bg=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(W,H)*0.7);
+    bg.addColorStop(0,'#0e1626');bg.addColorStop(1,'#0A0E1A');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+    // окружность
+    ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.strokeStyle='#1b2740';ctx.lineWidth=1.4;ctx.globalAlpha=0.8;ctx.stroke();ctx.globalAlpha=1;
+
+    // −I зеркало (диаметры)
+    if(show.mir){for(var k=1;k<=6;k++){var A=pos(k,R,cx,cy),B=pos(k+6,R,cx,cy);
+      ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.strokeStyle='#7FD8C4';ctx.lineWidth=1;ctx.globalAlpha=0.2;ctx.stroke();ctx.globalAlpha=1;}}
+
+    // гексаграмма (как у Гранта): чётные позиции, два треугольника
+    if(show.hex){[[12,4,8],[2,6,10]].forEach(function(tri){ctx.beginPath();
+      tri.forEach(function(n,i){var P=pos(n,R,cx,cy);if(i===0)ctx.moveTo(P[0],P[1]);else ctx.lineTo(P[0],P[1]);});
+      ctx.closePath();ctx.strokeStyle='#5a6b52';ctx.lineWidth=1.2;ctx.globalAlpha=0.55;ctx.stroke();ctx.globalAlpha=1;});
+      // внутренний круг
+      ctx.beginPath();ctx.arc(cx,cy,R*0.5,0,7);ctx.strokeStyle='#33402e';ctx.lineWidth=1;ctx.globalAlpha=0.5;ctx.stroke();ctx.globalAlpha=1;}
+
+    // три квадрата (орбиты ×i)
+    if(show.sq){for(var k=1;k<=12;k++){var A=pos(k,R,cx,cy),B=pos(((k+3-1)%12)+1,R,cx,cy);
+      ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.strokeStyle=COL[fam(k)];ctx.lineWidth=1.6;ctx.globalAlpha=0.55;ctx.stroke();ctx.globalAlpha=1;}}
+
+    // стрелки-ножницы (часовая вверх=12, минутная под углом ANG)
+    if(show.hand){
+      function hand(angDeg,len,w){var a=(angDeg-90)*Math.PI/180;var ex=cx+len*Math.cos(a),ey=cy+len*Math.sin(a);
+        // вилка-ножницы: две линии чуть в стороны
+        [-7,7].forEach(function(off){var oa=a+off*Math.PI/180;
+          ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+len*Math.cos(oa),cy+len*Math.sin(oa));
+          ctx.strokeStyle='#0e0e0e';ctx.lineWidth=w;ctx.globalAlpha=0.9;ctx.stroke();ctx.globalAlpha=1;});
+        ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(ex,ey);ctx.strokeStyle='#111';ctx.lineWidth=w+1;ctx.globalAlpha=0.85;ctx.stroke();ctx.globalAlpha=1;}
+      hand(0,R*0.6,4.5);          // часовая → 12
+      hand(ANG,R*0.82,3.5);        // минутная → угол
+      // дуга угла
+      ctx.beginPath();ctx.arc(cx,cy,26,-Math.PI/2,(ANG-90)*Math.PI/180);ctx.strokeStyle='#B5613C';ctx.lineWidth=1.4;ctx.globalAlpha=0.7;ctx.stroke();ctx.globalAlpha=1;
+      ctx.font='11px ui-monospace,Menlo,monospace';ctx.fillStyle='#B5613C';ctx.textAlign='center';ctx.fillText(ANG+'°',cx+34,cy-8);
+    }
+
+    // центр −I
+    ctx.beginPath();ctx.arc(cx,cy,5,0,7);ctx.fillStyle='#B5613C';ctx.fill();
+
+    // узлы + метки
+    for(var k=1;k<=12;k++){var A=pos(k,R,cx,cy);var c=COL[fam(k)];
+      ctx.beginPath();ctx.arc(A[0],A[1],k%3===1?5:4,0,7);ctx.fillStyle=c;ctx.fill();
+      // n внутри
+      var In=pos(k,R-22,cx,cy);ctx.font=(k%3===1?'bold ':'')+'13px ui-monospace,Menlo,monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillStyle=c;ctx.fillText(String(k),In[0],In[1]);
+      // n² снаружи (водород)
+      if(show.n2){var Out=pos(k,R+24,cx,cy);ctx.font='12px ui-monospace,Menlo,monospace';ctx.fillStyle='#9fb0cc';
+        ctx.fillText('√'+N2[k],Out[0],Out[1]);}
+    }
+    // подпись верха
+    ctx.font='10px ui-monospace,Menlo,monospace';ctx.fillStyle='#6f7c95';ctx.textAlign='center';
+    ctx.fillText('12 = √144 = max (старт не с 1)',cx,cy-R-42);
+    ctx.textAlign='left';ctx.fillText('час n → n² = вырождение водорода · Σn²=650=2·5²·13 · ◇',14,H-64);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
