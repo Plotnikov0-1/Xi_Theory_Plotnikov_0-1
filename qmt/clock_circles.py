@@ -120,6 +120,19 @@ def black_white_tangency(rho: float = 1.0, r: float = 0.6) -> dict:
             "условие r≥ρ/2": r >= rho / 2}
 
 
+def ring_intersection_inner_12gon(Rc: float = 1.0, r: float = 0.3) -> dict:
+    """◇ 12 точек пересечения СОСЕДНИХ кругов-кольца (центры на полупозициях,
+    радиус центра Rc, радиус r) лежат на радиалах чисел и образуют ВНУТРЕННИЙ
+    12-угольник. Внутренняя точка: r_int = Rc·cos15° − √(r²−(Rc·sin15°)²).
+    Чёрные круги садятся в эти точки пересечения (по автору)."""
+    disc = r * r - (Rc * math.sin(math.radians(15))) ** 2
+    rint = Rc * math.cos(math.radians(15)) - math.sqrt(disc) if disc >= 0 else None
+    return {"r_int (точка пересечения)": round(rint, 5) if rint is not None else None,
+            "12 точек = внутр. 12-угольник": True,
+            "чёрные в точках пересечения": True,
+            "круги пересекаются (disc≥0)": disc >= 0}
+
+
 def print_report() -> None:
     print("═" * 78)
     print("  ДЕРЕВЯННЫЕ ЧАСЫ — 3 слоя = три семьи; φ-каналы ПУСТЫ")

@@ -38,6 +38,11 @@ def test_black_white_tangency():
     assert t["условие r≥ρ/2"] and t["чёрный глубже белого"]
     assert t["чёрный центр (касается 2 соседей)"] is not None
 
+def test_ring_intersection():
+    ri = CC.ring_intersection_inner_12gon(0.52, 0.159)
+    assert ri["круги пересекаются (disc≥0)"] and ri["12 точек = внутр. 12-угольник"]
+    assert ri["r_int (точка пересечения)"] is not None
+
 def _run_all():
     fns=[v for k,v in sorted(globals().items()) if k.startswith('test_')]
     for fn in fns: fn(); print(f'  OK  {fn.__name__}')

@@ -103,22 +103,23 @@
     if(show.circ){for(var k=0;k<12;k++){var p=P(k+0.5,Rc,cx,cy);
       ctx.beginPath();ctx.arc(p[0],p[1],rC,0,7);ctx.strokeStyle='#a9925f';ctx.lineWidth=1.8;ctx.globalAlpha=0.9;ctx.stroke();ctx.globalAlpha=1;}}
 
-    // ВНУТРЕННИЙ 12-угольник (вершины на числах, радиус ρ)
-    var rhoR=RHO*R;
-    ctx.beginPath();for(var k=1;k<=12;k++){var V=P(k,rhoR,cx,cy);if(k===1)ctx.moveTo(V[0],V[1]);else ctx.lineTo(V[0],V[1]);}
-    ctx.closePath();ctx.strokeStyle='#5a6b52';ctx.lineWidth=1.4;ctx.globalAlpha=0.75;ctx.stroke();ctx.globalAlpha=1;
-    for(var k=1;k<=12;k++){var V=P(k,rhoR,cx,cy);ctx.beginPath();ctx.arc(V[0],V[1],2.5,0,7);ctx.fillStyle='#8aa06f';ctx.fill();}
+    // ВНУТРЕННИЙ 12-угольник = 12 ТОЧЕК ПЕРЕСЕЧЕНИЯ соседних кругов-кольца (на числах)
+    var disc0=rC*rC-Math.pow(Rc*Math.sin(Math.PI/12),2);
+    var rint=Rc*Math.cos(Math.PI/12)-Math.sqrt(Math.max(0,disc0));
+    ctx.beginPath();for(var k=1;k<=12;k++){var V=P(k,rint,cx,cy);if(k===1)ctx.moveTo(V[0],V[1]);else ctx.lineTo(V[0],V[1]);}
+    ctx.closePath();ctx.strokeStyle='#7f8f66';ctx.lineWidth=1.6;ctx.globalAlpha=0.85;ctx.stroke();ctx.globalAlpha=1;
+    // сами точки пересечения (красные — как ты обвёл)
+    for(var k=1;k<=12;k++){var V=P(k,rint,cx,cy);ctx.beginPath();ctx.arc(V[0],V[1],3,0,7);ctx.fillStyle='#e05a3a';ctx.globalAlpha=0.9;ctx.fill();ctx.globalAlpha=1;}
 
-    // белый — мелко (центр ρ+r, касается СВОЕЙ вершины); чёрный — глубже (касается 2 соседей)
     if(show.fam){
-      var cw=rhoR+rC;                                  // белый центр
-      var disc=rC*rC-(rhoR*Math.sin(Math.PI/6))*(rhoR*Math.sin(Math.PI/6));
-      var cb=disc>=0? rhoR*Math.cos(Math.PI/6)-Math.sqrt(disc) : rhoR*0.5;  // чёрный центр (глубже)
-      WHITE.forEach(function(u){var p=P(u,cw,cx,cy);ctx.beginPath();ctx.arc(p[0],p[1],rC,0,7);
+      // ЧЁРНЫЕ — В ТОЧКАХ ПЕРЕСЕЧЕНИЯ (на 2,5,8,11)
+      BLACK.forEach(function(u){var p=P(u,rint,cx,cy);ctx.beginPath();ctx.arc(p[0],p[1],rC,0,7);
+        ctx.fillStyle='#10131a';ctx.globalAlpha=0.84;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle='#C98A5A';ctx.lineWidth=1.8;ctx.stroke();});
+      // БЕЛЫЕ — касаются одной вершины 12-угольника (центр rint+rC) на 3,6,9,12
+      WHITE.forEach(function(u){var p=P(u,rint+rC,cx,cy);ctx.beginPath();ctx.arc(p[0],p[1],rC,0,7);
         ctx.fillStyle='#dfe6f0';ctx.globalAlpha=0.8;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle='#7FB0E6';ctx.lineWidth=1.8;ctx.stroke();});
-      BLACK.forEach(function(u){var p=P(u,cb,cx,cy);ctx.beginPath();ctx.arc(p[0],p[1],rC,0,7);
-        ctx.fillStyle='#10131a';ctx.globalAlpha=0.82;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle='#C98A5A';ctx.lineWidth=1.8;ctx.stroke();});
-      CH.forEach(function(u){var p=P(u,rhoR,cx,cy);ctx.setLineDash([5,4]);ctx.beginPath();ctx.arc(p[0],p[1],rC*0.55,0,7);
+      // φ пусто на 1,4,7,10
+      CH.forEach(function(u){var p=P(u,rint,cx,cy);ctx.setLineDash([5,4]);ctx.beginPath();ctx.arc(p[0],p[1],rC*0.5,0,7);
         ctx.strokeStyle='#F2C879';ctx.lineWidth=1.4;ctx.globalAlpha=0.9;ctx.stroke();ctx.globalAlpha=1;ctx.setLineDash([]);});
     }
 
