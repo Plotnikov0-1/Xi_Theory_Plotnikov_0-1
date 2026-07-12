@@ -49,8 +49,9 @@
       Непрерывна, не замыкается (φ).</span></div></div>
 
     <div class="row"><div class="dot" style="background:var(--gold)"></div>
-      <div><span class="k">Нить-авоська</span> — сферический Лиссажу, a=5, <b>волн 6</b> (удвоено).<br>
-      <span class="muted">Пересечения нити = <b>узлы</b> (операторы перехода).</span></div></div>
+      <div><span class="k">Нить-авоська</span> — Лиссажу a=5, <b>волн 6</b>: <b>12 нитей</b>, 10 операторов.<br>
+      <span class="muted">Нити задают ЧАСТОТЫ (5×6), не диапазон t. Диапазон 30π (как оригинал)
+      просто обводит плотно: период ровно 2π. Пересечения = <b>узлы</b>.</span></div></div>
 
     <div class="row"><div class="dot" style="background:#ff6b6b"></div>
       <div><span class="k">10 золотых операторов экватора</span> (декагон, 36°).<br>
@@ -113,9 +114,13 @@ function screen(p){const R=Math.min(W,H)*0.40, cx=W*0.5, cy=H*0.5;
 function meridian(lon){const pts=[];for(let th=0;th<=180;th+=4)pts.push(sph(th,lon));return pts;}
 function ring(theta){const pts=[];for(let l=0;l<=360;l+=4)pts.push(sph(theta,l));return pts;}
 
-// авоська thread: spherical Lissajous — a=5, waves b=6 (doubled)  x=sin6t cos5t, y=sin5t, z=cos6t cos5t
-function thread(){const pts=[];for(let i=0;i<=1800;i++){const t=i/1800*2*Math.PI;
-  pts.push([Math.sin(6*t)*Math.cos(5*t), Math.sin(5*t), Math.cos(6*t)*Math.cos(5*t)]);}return pts;}
+// авоська thread: spherical Lissajous — a=5, waves b=6 (doubled) -> 12 нитей, 10 операторов
+// x=sin6t cos5t, y=sin5t, z=cos6t cos5t.  Диапазон как в оригинале: t∈[0, LCM(a,b)·π]=30π
+// (для целых частот период ровно 2π, LCM·π обводит кривую плотно/солидно).
+const AA=5, BB=6, TMAX=Math.PI*(BB/gcd(AA,BB))*AA; // = LCM(a,b)*π
+function gcd(a,b){return b?gcd(b,a%b):a;}
+function thread(){const pts=[];const N=9000;for(let i=0;i<=N;i++){const t=i/N*TMAX;
+  pts.push([Math.sin(BB*t)*Math.cos(AA*t), Math.sin(AA*t), Math.cos(BB*t)*Math.cos(AA*t)]);}return pts;}
 const TH=thread();
 
 const RINGS=[30,60,90,120,150];
@@ -126,11 +131,12 @@ const CLOCK=[]; for(let k=1;k<=12;k++)CLOCK.push({n:k,p:sph(30*k,0)});
 // 10 golden equator operators (decagon, 36° apart) — crossings of a=5,b=6 at lon 18+36i
 const PENT=[]; for(let i=0;i<10;i++)PENT.push(sph(90,18+36*i));
 
-function drawPoly(pts,color,widthBase,alphaBase){
+function drawPoly(pts,color,widthBase,alphaBase,floor){
+  floor=(floor===undefined)?0.28:floor;
   for(let i=0;i<pts.length-1;i++){
     const a=screen(pts[i]), b=screen(pts[i+1]);
     const depth=(a[2]+b[2])/2;                 // -1..1
-    const al=alphaBase*(0.28+0.72*(depth+1)/2);
+    const al=alphaBase*(floor+(1-floor)*(depth+1)/2);
     ctx.strokeStyle=color; ctx.globalAlpha=al;
     ctx.lineWidth=widthBase*(0.6+0.4*(depth+1)/2);
     ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();
@@ -160,8 +166,8 @@ function frame(){
   // 12 ruler (cyan meridians)
   if(show.r12) for(const l of R12) drawPoly(meridian(l),'#5cc8ff',1,0.42);
 
-  // авоська thread (bright gold)
-  if(show.thread) drawPoly(TH,'#ffd98a',1.8,0.9);
+  // авоська thread (bright gold, all 12 threads visible — high floor)
+  if(show.thread) drawPoly(TH,'#ffe0a0',2.0,0.92,0.55);
 
   // pentagon golden equator points
   for(const p of PENT) dot(p,'#ff6b6b',4.5,true);
