@@ -1,0 +1,121 @@
+<meta charset="utf-8">
+<title>Два шара — 10 лепестков на полюсах</title>
+<style>
+  :root{--bg:#0a0e1a;--panel:#111726;--ink:#e8ecf5;--muted:#8b97b4;--gold:#ffd98a;--cyan:#7fd4ff;--line:#243049;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{display:flex;min-height:100%;flex-wrap:wrap}
+  .stage{flex:1 1 520px;position:relative;min-height:62vh}
+  canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+  canvas:active{cursor:grabbing}
+  .side{flex:0 0 320px;max-width:100%;padding:22px;background:var(--panel);border-left:1px solid var(--line)}
+  h1{font-size:18px;margin:0 0 6px}
+  .sub{color:var(--muted);font-size:12.5px;line-height:1.55;margin:0 0 14px}
+  .btns{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  button{background:#1a2338;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 13px;font-size:13px;cursor:pointer}
+  button.on{border-color:var(--gold);color:var(--gold)}
+  .row{display:flex;gap:9px;align-items:flex-start;font-size:13px;margin:9px 0;line-height:1.45}
+  .sw{flex:0 0 24px;height:0;border-top:3px solid;margin-top:8px;border-radius:2px}
+  .muted{color:var(--muted)}
+  .big{font-size:15px;color:var(--gold);font-weight:600;margin:10px 0 2px}
+  code{background:#0c1426;padding:2px 6px;border-radius:4px;font-size:11.5px;color:#a9c2ff}
+</style>
+
+<div class="wrap">
+  <div class="stage"><canvas id="c"></canvas></div>
+  <div class="side">
+    <h1>Два шара → 10 лепестков</h1>
+    <p class="sub">Один шар даёт на полюсе <b>5</b> лепестков. Второй такой же, повёрнутый
+      на <b>36°</b>, кладёт свои 5 в промежутки → на полюсе <b>10</b>. Плоская Лиссажу убрана —
+      остались две 3D-кривые на сфере.</p>
+
+    <div class="row"><div class="sw" style="border-color:var(--gold)"></div>
+      <div><b style="color:var(--gold)">Шар 1</b> — кривая на сфере (5 лепестков).</div></div>
+    <div class="row"><div class="sw" style="border-color:var(--cyan)"></div>
+      <div><b style="color:var(--cyan)">Шар 2</b> — тот же, повёрнут на 36° (в промежутки).</div></div>
+
+    <div class="btns">
+      <button id="pole" class="on">▲ вид с полюса</button>
+      <button id="side">↔ вид сбоку</button>
+      <button id="spin">вращение</button>
+      <button id="s2">шар 2 вкл/выкл</button>
+    </div>
+
+    <p class="big" id="cnt">на полюсе: 10 лепестков (36°)</p>
+    <p class="muted" style="font-size:12px;line-height:1.6">
+      ◇ Кривая проходит полюс <code>a=5</code> раз → 5 лепестков (72°). Поворот второго
+      шара на 36° = половина шага → вместе 10 через 36° (декагон). Проверено.
+      Это то же удвоение 5→10, но геометрически: <b>два шара</b>, не смена частоты.
+    </p>
+  </div>
+</div>
+
+<script>
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+let W,H,DPR;
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);const r=cv.getBoundingClientRect();
+  W=r.width;H=r.height;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
+window.addEventListener('resize',resize);
+
+const A=5,B=3, OFF=36*Math.PI/180;         // второй шар повёрнут на 36° по долготе
+let spin=0.0, tilt=Math.PI/2, rot=false, show2=true, dragging=false, px=0,py=0;
+let tSpin=null, tTilt=null;
+
+function gcd(a,b){return b?gcd(b,a%b):a;} function lcm(a,b){return a/gcd(a,b)*b;}
+const TMAX=lcm(A,B)*Math.PI;
+function P(t){return [Math.sin(B*t)*Math.cos(A*t), Math.sin(A*t), Math.cos(B*t)*Math.cos(A*t)];}
+function rotY(p,d){return [p[0]*Math.cos(d)+p[2]*Math.sin(d), p[1], -p[0]*Math.sin(d)+p[2]*Math.cos(d)];}
+const C1=[],C2=[]; {const N=8000; for(let i=0;i<=N;i++){const p=P(i/N*TMAX);C1.push(p);C2.push(rotY(p,OFF));}}
+
+function proj(p){let x=p[0]*Math.cos(spin)+p[2]*Math.sin(spin);
+  let z=-p[0]*Math.sin(spin)+p[2]*Math.cos(spin);let y=p[1];
+  let y2=y*Math.cos(tilt)-z*Math.sin(tilt);let z2=y*Math.sin(tilt)+z*Math.cos(tilt);
+  return [x,y2,z2];}
+function scr(p){const R=Math.min(W,H)*0.40,cx=W/2,cy=H/2;const q=proj(p);return [cx+R*q[0],cy-R*q[1],q[2]];}
+
+function meridian(lon){const p=[];for(let th=0;th<=180;th+=5)
+  p.push([Math.sin(th*Math.PI/180)*Math.cos(lon),Math.cos(th*Math.PI/180),Math.sin(th*Math.PI/180)*Math.sin(lon)]);return p;}
+function ring(th){const p=[];for(let l=0;l<=360;l+=5)
+  p.push([Math.sin(th*Math.PI/180)*Math.cos(l*Math.PI/180),Math.cos(th*Math.PI/180),Math.sin(th*Math.PI/180)*Math.sin(l*Math.PI/180)]);return p;}
+
+function drawCurve(C,color){for(let i=0;i<C.length-1;i++){const a=scr(C[i]),b=scr(C[i+1]);
+  const d=(a[2]+b[2])/2;ctx.strokeStyle=color;ctx.globalAlpha=0.5+0.5*(d+1)/2;ctx.lineWidth=1.9;
+  ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();}ctx.globalAlpha=1;}
+
+function frame(){
+  ctx.clearRect(0,0,W,H);
+  const R=Math.min(W,H)*0.40,cx=W/2,cy=H/2;
+  ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.stroke();
+  for(let lo=0;lo<360;lo+=30){const m=meridian(lo);ctx.strokeStyle='rgba(120,150,200,0.10)';ctx.beginPath();
+    for(let i=0;i<m.length;i++){const s=scr(m[i]);i?ctx.lineTo(s[0],s[1]):ctx.moveTo(s[0],s[1]);}ctx.stroke();}
+  for(const th of [30,60,90,120,150]){const rg=ring(th);ctx.strokeStyle='rgba(120,150,200,0.10)';ctx.beginPath();
+    for(let i=0;i<rg.length;i++){const s=scr(rg[i]);i?ctx.lineTo(s[0],s[1]):ctx.moveTo(s[0],s[1]);}ctx.stroke();}
+  drawCurve(C1,'#ffd98a');
+  if(show2) drawCurve(C2,'#7fd4ff');
+  // poles
+  for(const p of [[0,1,0],[0,-1,0]]){const s=scr(p);ctx.fillStyle='#fff';ctx.globalAlpha=.85;
+    ctx.beginPath();ctx.arc(s[0],s[1],4,0,7);ctx.fill();ctx.globalAlpha=1;}
+
+  if(tSpin!==null){spin+=(tSpin-spin)*0.12;tilt+=(tTilt-tilt)*0.12;
+    if(Math.abs(tSpin-spin)<0.001&&Math.abs(tTilt-tilt)<0.001){spin=tSpin;tilt=tTilt;tSpin=null;}}
+  else if(rot&&!dragging){spin+=0.006;}
+  requestAnimationFrame(frame);
+}
+
+document.getElementById('cnt').textContent = 'на полюсе: '+(show2?'10 лепестков (36°)':'5 лепестков (72°)');
+function poleView(){tSpin=0;tTilt=Math.PI/2;rot=false;document.getElementById('spin').classList.remove('on');}
+function sideView(){tSpin=0;tTilt=0.25;rot=false;document.getElementById('spin').classList.remove('on');}
+document.getElementById('pole').onclick=poleView;
+document.getElementById('side').onclick=sideView;
+document.getElementById('spin').onclick=function(){rot=!rot;tSpin=null;this.classList.toggle('on',rot);};
+document.getElementById('s2').onclick=function(){show2=!show2;
+  document.getElementById('cnt').textContent='на полюсе: '+(show2?'10 лепестков (36°)':'5 лепестков (72°)');};
+
+cv.addEventListener('pointerdown',e=>{dragging=true;rot=false;tSpin=null;px=e.clientX;py=e.clientY;cv.setPointerCapture(e.pointerId);});
+cv.addEventListener('pointermove',e=>{if(!dragging)return;spin+=(e.clientX-px)*0.01;
+  tilt=Math.max(-1.6,Math.min(1.6,tilt+(e.clientY-py)*0.01));px=e.clientX;py=e.clientY;});
+cv.addEventListener('pointerup',()=>dragging=false);
+
+resize();frame();
+</script>
