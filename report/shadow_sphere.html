@@ -1,0 +1,139 @@
+<meta charset="utf-8">
+<title>Сфера, тень которой = Лиссажу</title>
+<style>
+  :root{--bg:#0a0e1a;--panel:#111726;--ink:#e8ecf5;--muted:#8b97b4;--gold:#ffd98a;--cyan:#5cc8ff;--line:#243049;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{display:flex;min-height:100%;flex-wrap:wrap}
+  .stage{flex:1 1 520px;position:relative;min-height:62vh}
+  canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+  canvas:active{cursor:grabbing}
+  .side{flex:0 0 330px;max-width:100%;padding:22px;background:var(--panel);border-left:1px solid var(--line)}
+  h1{font-size:18px;margin:0 0 6px}
+  .sub{color:var(--muted);font-size:12.5px;line-height:1.55;margin:0 0 16px}
+  .btns{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  button{background:#1a2338;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 13px;font-size:13px;cursor:pointer}
+  button.on{border-color:var(--gold);color:var(--gold)}
+  .row{display:flex;gap:9px;align-items:flex-start;font-size:13px;margin:9px 0;line-height:1.45}
+  .sw{flex:0 0 24px;height:0;border-top:3px solid;margin-top:8px;border-radius:2px}
+  .muted{color:var(--muted)}
+  .ok{margin-top:14px;padding:10px 12px;border-radius:8px;background:#0d1f16;border:1px solid #1f5c3a;color:#7ee0a8;font-size:12.5px;line-height:1.5}
+  code{background:#0c1426;padding:2px 6px;border-radius:4px;font-size:11.5px;color:#a9c2ff}
+</style>
+
+<div class="wrap">
+  <div class="stage"><canvas id="c"></canvas></div>
+  <div class="side">
+    <h1>Сфера, тень которой = Лиссажу</h1>
+    <p class="sub">Плоская Лиссажу — это <b>тень</b> кривой, лежащей на шаре.
+      Поставь шар «лицом» — тень ляжет точно на оригинал. Крути мышью, чтобы убедиться,
+      что кривая настоящая 3D на сфере.</p>
+
+    <div class="row"><div class="sw" style="border-color:var(--cyan)"></div>
+      <div><b style="color:var(--cyan)">Оригинал-Лиссажу</b> (плоский) — цель-тень, приколота к экрану.</div></div>
+    <div class="row"><div class="sw" style="border-color:var(--gold)"></div>
+      <div><b style="color:var(--gold)">Кривая на сфере</b> 3D — её тень (проекция, отбрось z).</div></div>
+
+    <div class="btns">
+      <button id="align" class="on">▶ совместить тень</button>
+      <button id="spin">вращение</button>
+      <button id="sph">каркас сферы</button>
+    </div>
+
+    <div class="ok" id="ok"></div>
+
+    <p class="muted" style="font-size:12px;line-height:1.6;margin-top:16px">
+      ◇ Тень точна: проекция <code>(sin·cos, sin, cos·cos)</code> на плоскость =
+      <code>(sin·cos, sin)</code> = плоская Лиссажу. И <code>x²+y²+z²=1</code> — точка лежит на сфере.
+      Значит эта сфера «перекрывает Лиссажу как тень» ровно при взгляде в лицо.
+    </p>
+  </div>
+</div>
+
+<script>
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+let W,H,DPR;
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);const r=cv.getBoundingClientRect();
+  W=r.width;H=r.height;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
+window.addEventListener('resize',resize);
+
+const A=5,B=3;
+let spin=0.0, tilt=0.0, rot=false, showSphere=true, dragging=false, px=0,py=0;
+let targetSpin=null, targetTilt=null;                    // для анимации совмещения
+
+function gcd(a,b){return b?gcd(b,a%b):a;} function lcm(a,b){return a/gcd(a,b)*b;}
+const TMAX=lcm(A,B)*Math.PI;
+function P(t){return [Math.sin(B*t)*Math.cos(A*t), Math.sin(A*t), Math.cos(B*t)*Math.cos(A*t)];}
+const CURVE=[]; {const N=8000; for(let i=0;i<=N;i++)CURVE.push(P(i/N*TMAX));}
+
+function proj(p){ // rotate then orthographic; screen (x,y), depth z
+  let x=p[0]*Math.cos(spin)+p[2]*Math.sin(spin);
+  let z=-p[0]*Math.sin(spin)+p[2]*Math.cos(spin);
+  let y=p[1];
+  let y2=y*Math.cos(tilt)-z*Math.sin(tilt);
+  let z2=y*Math.sin(tilt)+z*Math.cos(tilt);
+  return [x,y2,z2];
+}
+function scr(p){const R=Math.min(W,H)*0.40,cx=W/2,cy=H/2;const q=proj(p);
+  return [cx+R*q[0], cy-R*q[1], q[2]];}
+function scr2d(x,y){const R=Math.min(W,H)*0.40,cx=W/2,cy=H/2;return [cx+R*x, cy-R*y];}
+
+function meridian(lon){const p=[];for(let th=0;th<=180;th+=5)
+  p.push([Math.sin(th*Math.PI/180)*Math.cos(lon),Math.cos(th*Math.PI/180),Math.sin(th*Math.PI/180)*Math.sin(lon)]);return p;}
+function ring(th){const p=[];for(let l=0;l<=360;l+=5)
+  p.push([Math.sin(th*Math.PI/180)*Math.cos(l*Math.PI/180),Math.cos(th*Math.PI/180),Math.sin(th*Math.PI/180)*Math.sin(l*Math.PI/180)]);return p;}
+
+function frame(){
+  ctx.clearRect(0,0,W,H);
+  const R=Math.min(W,H)*0.40,cx=W/2,cy=H/2;
+  // faint sphere
+  ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.stroke();
+  if(showSphere){
+    for(let lo=0;lo<360;lo+=30){const m=meridian(lo);ctx.strokeStyle='rgba(120,150,200,0.13)';ctx.beginPath();
+      for(let i=0;i<m.length;i++){const s=scr(m[i]);i?ctx.lineTo(s[0],s[1]):ctx.moveTo(s[0],s[1]);}ctx.stroke();}
+    for(const th of [30,60,90,120,150]){const rg=ring(th);ctx.strokeStyle='rgba(120,150,200,0.13)';ctx.beginPath();
+      for(let i=0;i<rg.length;i++){const s=scr(rg[i]);i?ctx.lineTo(s[0],s[1]):ctx.moveTo(s[0],s[1]);}ctx.stroke();}
+  }
+  // reference flat Lissajous (the shadow target) — pinned to screen
+  ctx.strokeStyle='#5cc8ff';ctx.globalAlpha=0.55;ctx.lineWidth=3.2;ctx.beginPath();
+  for(let i=0;i<CURVE.length;i++){const s=scr2d(CURVE[i][0],CURVE[i][1]);i?ctx.lineTo(s[0],s[1]):ctx.moveTo(s[0],s[1]);}
+  ctx.stroke();ctx.globalAlpha=1;
+  // the 3D sphere curve (its screen position IS its shadow/projection)
+  for(let i=0;i<CURVE.length-1;i++){const a=scr(CURVE[i]),b=scr(CURVE[i+1]);
+    const d=(a[2]+b[2])/2;ctx.strokeStyle='#ffd98a';ctx.globalAlpha=0.55+0.45*(d+1)/2;ctx.lineWidth=1.9;
+    ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();}
+  ctx.globalAlpha=1;
+
+  // alignment / status
+  const aligned=Math.abs(spin)<0.02&&Math.abs(tilt)<0.02;
+  document.getElementById('ok').innerHTML = aligned
+    ? '✓ ТЕНЬ СОВПАЛА: жёлтая кривая на сфере даёт тень точно = синяя плоская Лиссажу. '+
+      'Эта сфера и есть искомая — она перекрывает Лиссажу как тень.'
+    : 'Кривая на сфере наклонена — тень (жёлтая) уходит с оригинала (синего). '+
+      'Жми «совместить тень» или доверни в лицо.';
+  document.getElementById('ok').style.background=aligned?'#0d1f16':'#1a1526';
+  document.getElementById('ok').style.borderColor=aligned?'#1f5c3a':'#5c3a1f';
+  document.getElementById('ok').style.color=aligned?'#7ee0a8':'#e0b87e';
+
+  // animate to alignment
+  if(targetSpin!==null){spin+=(targetSpin-spin)*0.12;tilt+=(targetTilt-tilt)*0.12;
+    if(Math.abs(targetSpin-spin)<0.001&&Math.abs(targetTilt-tilt)<0.001){spin=targetSpin;tilt=targetTilt;targetSpin=null;}}
+  else if(rot&&!dragging){spin+=0.006;}
+  requestAnimationFrame(frame);
+}
+
+document.getElementById('align').onclick=()=>{targetSpin=0;targetTilt=0;rot=false;
+  document.getElementById('spin').classList.remove('on');};
+document.getElementById('spin').onclick=function(){rot=!rot;targetSpin=null;this.classList.toggle('on',rot);};
+document.getElementById('sph').onclick=function(){showSphere=!showSphere;this.classList.toggle('on',showSphere);};
+document.getElementById('sph').classList.add('on');
+
+cv.addEventListener('pointerdown',e=>{dragging=true;rot=false;targetSpin=null;px=e.clientX;py=e.clientY;cv.setPointerCapture(e.pointerId);});
+cv.addEventListener('pointermove',e=>{if(!dragging)return;spin+=(e.clientX-px)*0.01;
+  tilt=Math.max(-1.5,Math.min(1.5,tilt+(e.clientY-py)*0.01));px=e.clientX;py=e.clientY;});
+cv.addEventListener('pointerup',()=>dragging=false);
+
+resize();frame();
+</script>
