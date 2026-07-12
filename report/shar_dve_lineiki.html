@@ -49,12 +49,12 @@
       Непрерывна, не замыкается (φ).</span></div></div>
 
     <div class="row"><div class="dot" style="background:var(--gold)"></div>
-      <div><span class="k">Нить-авоська</span> — сферический Лиссажу 5:3.<br>
+      <div><span class="k">Нить-авоська</span> — сферический Лиссажу, a=5, <b>волн 6</b> (удвоено).<br>
       <span class="muted">Пересечения нити = <b>узлы</b> (операторы перехода).</span></div></div>
 
     <div class="row"><div class="dot" style="background:#ff6b6b"></div>
-      <div><span class="k">5 золотых точек экватора</span> (пятиугольник).<br>
-      <span class="muted">sin72°/sin36° = φ — «золотой экватор».</span></div></div>
+      <div><span class="k">10 золотых операторов экватора</span> (декагон, 36°).<br>
+      <span class="muted">R/сторона декагона = φ — «золотой экватор». Удвоено с 5.</span></div></div>
 
     <div class="btns">
       <button id="b12">линейка 12</button>
@@ -113,9 +113,9 @@ function screen(p){const R=Math.min(W,H)*0.40, cx=W*0.5, cy=H*0.5;
 function meridian(lon){const pts=[];for(let th=0;th<=180;th+=4)pts.push(sph(th,lon));return pts;}
 function ring(theta){const pts=[];for(let l=0;l<=360;l+=4)pts.push(sph(theta,l));return pts;}
 
-// авоська thread: spherical Lissajous 5:3  (x=sin3t cos5t, y=sin5t, z=cos3t cos5t)
-function thread(){const pts=[];for(let i=0;i<=1400;i++){const t=i/1400*2*Math.PI;
-  pts.push([Math.sin(3*t)*Math.cos(5*t), Math.sin(5*t), Math.cos(3*t)*Math.cos(5*t)]);}return pts;}
+// авоська thread: spherical Lissajous — a=5, waves b=6 (doubled)  x=sin6t cos5t, y=sin5t, z=cos6t cos5t
+function thread(){const pts=[];for(let i=0;i<=1800;i++){const t=i/1800*2*Math.PI;
+  pts.push([Math.sin(6*t)*Math.cos(5*t), Math.sin(5*t), Math.cos(6*t)*Math.cos(5*t)]);}return pts;}
 const TH=thread();
 
 const RINGS=[30,60,90,120,150];
@@ -123,8 +123,8 @@ const R12=[]; for(let l=0;l<360;l+=30)R12.push(l);
 const R10=[]; for(let l=0;l<360;l+=36)R10.push(l);
 // clock numbers on front meridian (lon 0): θ=30*k
 const CLOCK=[]; for(let k=1;k<=12;k++)CLOCK.push({n:k,p:sph(30*k,0)});
-// 5 golden equator points (pentagon, 72° apart)
-const PENT=[]; for(let i=0;i<5;i++)PENT.push(sph(90,72*i));
+// 10 golden equator operators (decagon, 36° apart) — crossings of a=5,b=6 at lon 18+36i
+const PENT=[]; for(let i=0;i<10;i++)PENT.push(sph(90,18+36*i));
 
 function drawPoly(pts,color,widthBase,alphaBase){
   for(let i=0;i<pts.length-1;i++){
