@@ -2,34 +2,38 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from qmt import sphere_nodes as S
 
-def test_doubling():
-    d = S.doubling()
-    assert d["база 5:3"] == 5 and d["удвоено 5:6"] == 10
-    assert d["×2 корректно"] is True
-    assert d["★ 10:6 вырождено"] is True          # 5:3→10:6 нельзя (gcd=2)
+def test_equator_structure_5_10_20():
+    e = S.equator_structure(5, 3)
+    assert e["оба нечёт"] is True
+    assert e["операторов (крестов)"] == 5        # пентагон
+    assert e["нитей (проходов)"] == 10
+    assert e["дуг"] == 20
+    assert e["пересечения есть"] is True
 
-def test_equator_operators_pentagon_decagon():
-    base = S.distinct_equator_operators(5, 3)
-    dbl = S.distinct_equator_operators(5, 6)
-    assert base["операторов"] == 5 and base["шаг"] == [72.0]      # пентагон
-    assert dbl["операторов"] == 10 and dbl["шаг"] == [36.0]       # декагон
-    assert not dbl["вырождено (gcd>1)"]
+def test_parity_law():
+    p = S.parity_law()
+    assert p["нечёт·нечёт(копрост) → операторов = a"] == {3: 3, 5: 5, 7: 7, 9: 9, 11: 11}
+    assert p["все равны a"] is True
+    assert p["b чётное (5,6) → 0"] is True        # b=6 не даёт пересечений
+    assert p["ровно 10 невозможно (перебор ≤15)"] is True
 
-def test_golden_preserved():
-    assert S.golden_pentagon_is_exact()            # sin72/sin36 = φ
-    assert S.golden_decagon_is_exact()             # 1/(2 sin18) = φ
+def test_even_b_has_no_operators():
+    assert S.operators_count(5, 3) == 5
+    assert S.operators_count(5, 6) == 0           # ★ моя ошибка исправлена
 
-def test_exact_counts_doubled():
-    e = S.exact_counts(5, 6)
-    assert e["проходов экватора"] == 10
-    assert e["операторов экватора"] == 10
-    assert e["проходов полюса N"] == 5 and e["проходов полюса S"] == 5
-    assert e["волн (долгота) b"] == 6
+def test_golden_pentagon():
+    assert S.golden_pentagon_is_exact()           # sin72/sin36 = φ
+
+def test_exact_counts():
+    e = S.exact_counts(5, 3)
+    assert e["нитей (проходов экватора)"] == 10
+    assert e["операторов (пересечений)"] == 5
+    assert e["волн (долгота) b"] == 3
     assert S.equator_crossings_count(5) == 10
 
 def test_self_intersections_range():
-    si = S.self_intersections_numeric(5, 6, samples=30000)
-    assert 35 <= si["узлов (~)"] <= 60             # 5:6 плотнее базы
+    si = S.self_intersections_numeric(5, 3, samples=30000)
+    assert 25 <= si["узлов (~)"] <= 45
     assert si["из них полюса"] >= 1
 
 def _run_all():

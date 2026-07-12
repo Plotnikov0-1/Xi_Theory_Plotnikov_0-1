@@ -49,13 +49,14 @@
       Непрерывна, не замыкается (φ).</span></div></div>
 
     <div class="row"><div class="dot" style="background:var(--gold)"></div>
-      <div><span class="k">Нить-авоська</span> — Лиссажу a=5, <b>волн 6</b>: <b>12 нитей</b>, 10 операторов.<br>
-      <span class="muted">Нити задают ЧАСТОТЫ (5×6), не диапазон t. Диапазон 30π (как оригинал)
-      просто обводит плотно: период ровно 2π. Пересечения = <b>узлы</b>.</span></div></div>
+      <div><span class="k">Нить-авоська</span> — Лиссажу a=5, <b>волн 3</b> (оригинал).<br>
+      <span class="muted">Оператор = <b>пересечение</b> нитей на экваторе (крест). Бывает
+      только при нечётных a,b. Структура: 5 крестов · 10 нитей · 20 дуг.</span></div></div>
 
     <div class="row"><div class="dot" style="background:#ff6b6b"></div>
-      <div><span class="k">10 золотых операторов экватора</span> (декагон, 36°).<br>
-      <span class="muted">R/сторона декагона = φ — «золотой экватор». Удвоено с 5.</span></div></div>
+      <div><span class="k">5 операторов экватора</span> (пересечения, пентагон 72°).<br>
+      <span class="muted">sin72/sin36 = φ. Число операторов = a (нечёт); ровно 10 как
+      пересечений невозможно (нужно чётное a).</span></div></div>
 
     <div class="btns">
       <button id="b12">линейка 12</button>
@@ -114,10 +115,9 @@ function screen(p){const R=Math.min(W,H)*0.40, cx=W*0.5, cy=H*0.5;
 function meridian(lon){const pts=[];for(let th=0;th<=180;th+=4)pts.push(sph(th,lon));return pts;}
 function ring(theta){const pts=[];for(let l=0;l<=360;l+=4)pts.push(sph(theta,l));return pts;}
 
-// авоська thread: spherical Lissajous — a=5, waves b=6 (doubled) -> 12 нитей, 10 операторов
-// x=sin6t cos5t, y=sin5t, z=cos6t cos5t.  Диапазон как в оригинале: t∈[0, LCM(a,b)·π]=30π
-// (для целых частот период ровно 2π, LCM·π обводит кривую плотно/солидно).
-const AA=5, BB=6, TMAX=Math.PI*(BB/gcd(AA,BB))*AA; // = LCM(a,b)*π
+// авоська thread: spherical Lissajous — a=5, waves b=3 (оригинал, оба нечёт -> операторы=пересечения)
+// x=sin3t cos5t, y=sin5t, z=cos3t cos5t.  Диапазон как в оригинале: t∈[0, LCM(a,b)·π]=15π.
+const AA=5, BB=3, TMAX=Math.PI*(BB/gcd(AA,BB))*AA; // = LCM(a,b)*π
 function gcd(a,b){return b?gcd(b,a%b):a;}
 function thread(){const pts=[];const N=9000;for(let i=0;i<=N;i++){const t=i/N*TMAX;
   pts.push([Math.sin(BB*t)*Math.cos(AA*t), Math.sin(AA*t), Math.cos(BB*t)*Math.cos(AA*t)]);}return pts;}
@@ -128,8 +128,8 @@ const R12=[]; for(let l=0;l<360;l+=30)R12.push(l);
 const R10=[]; for(let l=0;l<360;l+=36)R10.push(l);
 // clock numbers on front meridian (lon 0): θ=30*k
 const CLOCK=[]; for(let k=1;k<=12;k++)CLOCK.push({n:k,p:sph(30*k,0)});
-// 10 golden equator operators (decagon, 36° apart) — crossings of a=5,b=6 at lon 18+36i
-const PENT=[]; for(let i=0;i<10;i++)PENT.push(sph(90,18+36*i));
+// 5 операторов экватора (пересечения нитей = кресты, пентагон 72°) — a=5,b=3 at lon 18+72i
+const PENT=[]; for(let i=0;i<5;i++)PENT.push(sph(90,18+72*i));
 
 function drawPoly(pts,color,widthBase,alphaBase,floor){
   floor=(floor===undefined)?0.28:floor;
@@ -169,7 +169,7 @@ function frame(){
   // авоська thread (bright gold, all 12 threads visible — high floor)
   if(show.thread) drawPoly(TH,'#ffe0a0',2.0,0.92,0.55);
 
-  // 10 golden equator operators (decagon)
+  // 5 operators = thread self-intersections on equator (pentagon)
   for(const p of PENT) dot(p,'#ff6b6b',4.5,true);
 
   // poles = handles
