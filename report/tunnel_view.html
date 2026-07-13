@@ -1,0 +1,109 @@
+<meta charset="utf-8">
+<title>Авоська как туннель (вид вдоль оси полюсов)</title>
+<style>
+  :root{--bg:#05070f;--panel:#111726;--ink:#e8ecf5;--muted:#8b97b4;--gold:#ffd98a;--cyan:#7fd4ff;--line:#243049;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{display:flex;min-height:100%;flex-wrap:wrap}
+  .stage{flex:1 1 480px;position:relative;min-height:60vh}
+  canvas{display:block;width:100%;height:100%;cursor:default}
+  .side{flex:0 0 320px;max-width:100%;padding:22px;background:var(--panel);border-left:1px solid var(--line)}
+  h1{font-size:17px;margin:0 0 6px}
+  .sub{color:var(--muted);font-size:12.5px;line-height:1.55;margin:0 0 14px}
+  .btns{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  button{background:#1a2338;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 13px;font-size:13px;cursor:pointer}
+  button.on{border-color:var(--gold);color:var(--gold)}
+  .kv{font-size:13px;line-height:1.8;color:var(--muted)}
+  .kv b{color:var(--ink)}
+  .tiers{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.6}
+  code{background:#0c1426;padding:1px 5px;border-radius:4px;color:#a9c2ff;font-size:11px}
+</style>
+
+<div class="wrap">
+  <div class="stage"><canvas id="c"></canvas></div>
+  <div class="side">
+    <h1>Авоська как туннель</h1>
+    <p class="sub">Тот же шар, но взгляд <b>вдоль оси полюсов</b>. Широты становятся
+      концентрическими <b>кольцами-кадрами</b>, дальний полюс — точка схода.
+      Сфера снаружи = туннель изнутри.</p>
+
+    <div class="btns">
+      <button id="fly" class="on">▶ полёт по туннелю</button>
+      <button id="rings">кольца-кадры</button>
+      <button id="mode">↔ шар / туннель</button>
+    </div>
+
+    <div class="kv" id="stat"></div>
+
+    <div class="tiers">
+      ◇ радиус точки вдоль оси = <code>√(x²+z²)=|cos(a·t)|</code> → кольца.
+      Полюса = концы туннеля. Это <b>вид</b>, объект — сфера (<code>x²+y²+z²=1</code>).
+      Плоских пересечений: <b>22</b> (без полюсов) + 2 полюса = <b>24</b>.
+    </div>
+  </div>
+</div>
+
+<script>
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+let W,H,DPR;
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);const r=cv.getBoundingClientRect();
+  W=r.width;H=r.height;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
+window.addEventListener('resize',resize);
+
+const A=5,B=3;
+let fly=true, showRings=true, tunnel=true, phase=0, blend=1; // blend: 1=туннель, 0=шар
+function gcd(a,b){return b?gcd(b,a%b):a;} function lcm(a,b){return a/gcd(a,b)*b;}
+const TMAX=lcm(A,B)*Math.PI;
+function P(t){return [Math.sin(B*t)*Math.cos(A*t), Math.sin(A*t), Math.cos(B*t)*Math.cos(A*t)];}
+const CURVE=[]; {const N=6000; for(let i=0;i<=N;i++)CURVE.push(P(i/N*TMAX));}
+
+// проекция: смешение между «шар сбоку» (blend=0) и «туннель вдоль оси» (blend=1)
+function project(p,ph){
+  const R=Math.min(W,H)*0.42, cx=W/2, cy=H/2;
+  // туннель: смотрим вдоль y; глубина d от ближнего(y=+1) к дальнему(y=-1) полюсу
+  let y=p[1];
+  let d=(1-y)/2;                         // 0..1
+  d=(d+ph)%1;                            // «движение» по туннелю
+  const persp=3.0;
+  const s=1/(1+persp*d);                // перспектива: дальше — меньше
+  const tx=cx + R*s*p[0], ty=cy + R*s*p[2], tdepth=1-d;
+  // шар сбоку (ортографика, лёгкий наклон)
+  const sx=cx + R*p[0], sy=cy - R*p[1], sdepth=(p[2]+1)/2;
+  return [tx*blend+sx*(1-blend), ty*blend+sy*(1-blend), tdepth*blend+sdepth*(1-blend), s];
+}
+function ring(theta,ph){const pts=[];for(let l=0;l<=360;l+=6){
+  const p=[Math.sin(theta*Math.PI/180)*Math.cos(l*Math.PI/180),Math.cos(theta*Math.PI/180),
+           Math.sin(theta*Math.PI/180)*Math.sin(l*Math.PI/180)];
+  pts.push(project(p,ph));}return pts;}
+
+function frame(){
+  ctx.clearRect(0,0,W,H);
+  const ph=fly?phase:0;
+  // кольца-кадры
+  if(showRings){for(let th=15;th<180;th+=15){const rg=ring(th,ph);
+    ctx.strokeStyle='rgba(120,150,200,0.22)';ctx.lineWidth=1;ctx.beginPath();
+    for(let i=0;i<rg.length;i++){i?ctx.lineTo(rg[i][0],rg[i][1]):ctx.moveTo(rg[i][0],rg[i][1]);}ctx.stroke();}}
+  // нить, глубинно затенённая
+  for(let i=0;i<CURVE.length-1;i++){const a=project(CURVE[i],ph),b=project(CURVE[i+1],ph);
+    if(Math.abs(a[0]-b[0])+Math.abs(a[1]-b[1])>W*0.5) continue; // разрыв на склейке глубины
+    const dp=(a[2]+b[2])/2;
+    ctx.strokeStyle='#ffd98a';ctx.globalAlpha=0.25+0.75*dp;ctx.lineWidth=0.7+2.2*dp;
+    ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();}
+  ctx.globalAlpha=1;
+  document.getElementById('stat').innerHTML =
+    `режим: <b>${blend>0.5?'ТУННЕЛЬ (вдоль оси)':'ШАР (сбоку)'}</b><br>`+
+    `кольца = широты (кадры) · нить спиралит вглубь<br>объект: сфера <code>x²+y²+z²=1</code>`;
+  if(fly) phase=(phase+0.0016)%1;
+  requestAnimationFrame(frame);
+}
+document.getElementById('fly').onclick=function(){fly=!fly;this.classList.toggle('on',fly);};
+document.getElementById('rings').onclick=function(){showRings=!showRings;this.classList.toggle('on',showRings);};
+document.getElementById('rings').classList.add('on');
+document.getElementById('mode').onclick=function(){ // плавно между туннелем и шаром
+  const target=blend>0.5?0:1;const step=()=>{blend+=(target-blend)*0.15;
+    if(Math.abs(target-blend)>0.01)requestAnimationFrame(step);else blend=target;};step();
+  this.classList.toggle('on',target>0.5);};
+document.getElementById('mode').classList.add('on');
+resize();frame();
+</script>
