@@ -1,0 +1,117 @@
+<meta charset="utf-8">
+<title>Плоская карта авоськи — 22 оператора + 2 полюса</title>
+<style>
+  :root{--bg:#0a0e1a;--panel:#111726;--ink:#e8ecf5;--muted:#8b97b4;--gold:#ffd98a;--red:#ff6b6b;--cyan:#5cc8ff;--line:#243049;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{display:flex;min-height:100%;flex-wrap:wrap}
+  .stage{flex:1 1 460px;display:flex;align-items:center;justify-content:center;padding:16px;min-height:60vh}
+  svg{width:100%;max-width:560px;height:auto}
+  .side{flex:0 0 320px;max-width:100%;padding:22px;background:var(--panel);border-left:1px solid var(--line)}
+  h1{font-size:17px;margin:0 0 6px}
+  .sub{color:var(--muted);font-size:12.5px;line-height:1.55;margin:0 0 12px}
+  .node{cursor:pointer}
+  .kv{font-size:13.5px;line-height:1.8}
+  .kv b{color:var(--ink)}
+  .rowline{font-size:12.5px;color:var(--muted);margin:3px 0}
+  .tiers{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.6}
+  .big{font-size:15px;color:var(--gold);font-weight:600;margin:8px 0 2px}
+</style>
+
+<div class="wrap">
+  <div class="stage"><svg id="map" viewBox="-280 -280 560 560"></svg></div>
+  <div class="side">
+    <h1>Плоская карта авоськи</h1>
+    <p class="sub">22 оператора перехода (красные) в 5 рядах + 2 полюса-ручки (голубые).
+      Узел = пересечение = оператор = переход. Кликни узел.</p>
+
+    <div class="big" id="sel">выбери узел</div>
+    <div class="kv" id="info"></div>
+
+    <div style="margin-top:12px">
+      <div class="rowline">верх +0.87 — <b style="color:var(--red)">5</b> операторов</div>
+      <div class="rowline">+0.50 — <b style="color:var(--red)">4</b></div>
+      <div class="rowline">середина 0 — <b style="color:var(--red)">4</b></div>
+      <div class="rowline">−0.50 — <b style="color:var(--red)">4</b></div>
+      <div class="rowline">низ −0.87 — <b style="color:var(--red)">5</b></div>
+      <div class="rowline" style="color:var(--gold)">= 22 оператора + 2 полюса = 24</div>
+    </div>
+
+    <div class="tiers">
+      ◇ Кривая = плоская Лиссажу <code>{sin3t·cos5t, sin5t}</code>. 22 самопересечения
+      (без полюсов) посчитаны строго. 24 = 22 парных + 2 осевых (полюса) — наша структура.
+    </div>
+  </div>
+</div>
+
+<script>
+const svg=document.getElementById('map');
+const A=5,B=3;
+// 22 узла (посчитаны строго), по рядам сверху вниз
+const ROWS=[
+  {y: 0.87, xs:[-0.48,-0.29,0.0,0.29,0.48]},
+  {y: 0.50, xs:[-0.70,-0.27,0.27,0.70]},
+  {y: 0.00, xs:[-0.95,-0.59,0.59,0.95]},
+  {y:-0.50, xs:[-0.70,-0.27,0.27,0.70]},
+  {y:-0.87, xs:[-0.48,-0.29,0.0,0.29,0.48]},
+];
+const NODES=[]; let id=0;
+for(const r of ROWS) for(const x of r.xs) NODES.push({id:++id,x,y:r.y});
+const POLES=[{x:0,y:1,name:'полюс +'},{x:0,y:-1,name:'полюс −'}];
+const S=230;                       // масштаб
+function sx(x){return x*S;} function sy(y){return -y*S;}
+let sel=null;
+
+function build(){
+  svg.innerHTML='';
+  // рамка-круг + оси
+  const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  c.setAttribute('r',S);c.setAttribute('fill','none');c.setAttribute('stroke','rgba(255,255,255,0.08)');svg.appendChild(c);
+  for(const [x1,y1,x2,y2] of [[-S,0,S,0],[0,-S,0,S]]){const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+    l.setAttribute('stroke','rgba(255,255,255,0.06)');svg.appendChild(l);}
+  // ряды (тонкие линии высоты)
+  for(const r of ROWS){const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',-S);l.setAttribute('y1',sy(r.y));l.setAttribute('x2',S);l.setAttribute('y2',sy(r.y));
+    l.setAttribute('stroke','rgba(255,193,77,0.10)');svg.appendChild(l);}
+  // кривая Лиссажу (по параметру t∈[0, LCM·π])
+  let d='';
+  const TMAX=lcm(A,B)*Math.PI;
+  for(let i=0;i<=6000;i++){const t=i/6000*TMAX;const x=Math.sin(B*t)*Math.cos(A*t),y=Math.sin(A*t);
+    d+=(i?'L':'M')+sx(x).toFixed(1)+' '+sy(y).toFixed(1)+' ';}
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d',d);path.setAttribute('fill','none');path.setAttribute('stroke','#3f5fbf');
+  path.setAttribute('stroke-width',1.1);path.setAttribute('opacity',0.7);svg.appendChild(path);
+  // полюса
+  for(const p of POLES){const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',sx(p.x));c.setAttribute('cy',sy(p.y));c.setAttribute('r',7);
+    c.setAttribute('fill','#5cc8ff');svg.appendChild(c);
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');t.setAttribute('x',sx(p.x)+12);
+    t.setAttribute('y',sy(p.y)+ (p.y>0?-8:16));t.setAttribute('fill','#8b97b4');t.setAttribute('font-size','12');
+    t.textContent='ручка';svg.appendChild(t);}
+  // узлы
+  for(const n of NODES){const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('class','node');
+    const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',sx(n.x));c.setAttribute('cy',sy(n.y));c.setAttribute('r', sel===n.id?9:6);
+    c.setAttribute('fill', sel===n.id?'#ffd98a':'#ff6b6b');c.setAttribute('stroke','#0a0e1a');c.setAttribute('stroke-width',1.5);
+    g.appendChild(c);
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');t.setAttribute('x',sx(n.x));
+    t.setAttribute('y',sy(n.y)-10);t.setAttribute('text-anchor','middle');t.setAttribute('fill','#e8ecf5');
+    t.setAttribute('font-size','11');t.setAttribute('font-weight','700');t.textContent=n.id;g.appendChild(t);
+    g.onclick=()=>{sel=n.id;render();};svg.appendChild(g);}
+}
+function gcd(a,b){return b?gcd(b,a%b):a;} function lcm(a,b){return a/gcd(a,b)*b;}
+
+function render(){
+  build();
+  if(sel){const n=NODES.find(v=>v.id===sel);
+    const rowName={0.87:'верхний',0.5:'2-й сверху',0:'средний (экватор)','-0.5':'2-й снизу','-0.87':'нижний'}[n.y];
+    document.getElementById('sel').textContent='оператор № '+sel;
+    document.getElementById('info').innerHTML=
+      `положение: <b>x=${n.x}, y=${n.y}</b><br>ряд: <b>${rowName}</b><br>`+
+      `это точка перехода (где нить пересекает себя).`;
+  }
+}
+render();
+</script>
