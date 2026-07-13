@@ -1,0 +1,127 @@
+<meta charset="utf-8">
+<title>Авоська — два шара сплетены в сетку</title>
+<style>
+  :root{--bg:#070b14;--panel:#111726;--ink:#e8ecf5;--muted:#8b97b4;--gold:#ffd98a;--gold2:#ffb74d;--cyan:#7fd4ff;--red:#ff6b6b;--line:#243049;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{display:flex;min-height:100%;flex-wrap:wrap}
+  .stage{flex:1 1 480px;position:relative;min-height:62vh}
+  canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+  canvas:active{cursor:grabbing}
+  .side{flex:0 0 320px;max-width:100%;padding:22px;background:var(--panel);border-left:1px solid var(--line)}
+  h1{font-size:17px;margin:0 0 6px}
+  .sub{color:var(--muted);font-size:12.5px;line-height:1.55;margin:0 0 14px}
+  .btns{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  button{background:#1a2338;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 13px;font-size:13px;cursor:pointer}
+  button.on{border-color:var(--gold);color:var(--gold)}
+  .row{display:flex;gap:9px;align-items:flex-start;font-size:13px;margin:8px 0;line-height:1.4}
+  .sw{flex:0 0 22px;height:0;border-top:3px solid;margin-top:8px;border-radius:2px}
+  .dot{flex:0 0 11px;height:11px;border-radius:50%;margin-top:3px}
+  .big{font-size:15px;color:var(--gold);font-weight:600;margin:10px 0 2px}
+  .tiers{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.6}
+</style>
+
+<div class="wrap">
+  <div class="stage"><canvas id="c"></canvas></div>
+  <div class="side">
+    <h1>Авоська — сетка из двух шаров</h1>
+    <p class="sub">Два одинаковых шара, второй повёрнут на 36°, <b>сплетены</b>: их нити
+      пересекаются, образуя ячейки. Это и есть настоящая авоська-сетка, закрытая на
+      полюсах-ручках.</p>
+
+    <div class="row"><div class="sw" style="border-color:var(--gold)"></div>
+      <div><b style="color:var(--gold)">Нить 1</b> (шар 1).</div></div>
+    <div class="row"><div class="sw" style="border-color:var(--gold2)"></div>
+      <div><b style="color:var(--gold2)">Нить 2</b> (шар 2, +36°).</div></div>
+    <div class="row"><div class="dot" style="background:var(--red)"></div>
+      <div><b>Узлы плетения</b> — где нити пересекаются (ячейки сетки).</div></div>
+    <div class="row"><div class="dot" style="background:var(--cyan)"></div>
+      <div><b>Полюса-ручки</b> — сетка сходится и закрывается.</div></div>
+
+    <div class="btns">
+      <button id="pole" class="on">▲ вид с полюса</button>
+      <button id="side">↔ вид сбоку</button>
+      <button id="spin">вращение</button>
+      <button id="knots">узлы вкл/выкл</button>
+    </div>
+
+    <p class="big" id="cnt">узлов плетения: — · лепестков на полюсе: 10</p>
+    <p class="tiers">
+      ◇ 36° = половина шага лепестков → на полюсе 10 (декагон). Нити пересекаются
+      в ~20 узлах плетения. Полюса общие (поворот вокруг оси их не двигает) → сетка закрыта.
+      Это правильное соединение: не два отдельных шара, а одна сплетённая авоська.
+    </p>
+  </div>
+</div>
+
+<script>
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+let W,H,DPR;
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);const r=cv.getBoundingClientRect();
+  W=r.width;H=r.height;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
+window.addEventListener('resize',resize);
+
+const A=5,B=3,OFF=36*Math.PI/180;
+let spin=0.0, tilt=Math.PI/2, rot=false, showKnots=true, dragging=false, px=0,py=0, tSpin=null,tTilt=null;
+function gcd(a,b){return b?gcd(b,a%b):a;} function lcm(a,b){return a/gcd(a,b)*b;}
+const TMAX=lcm(A,B)*Math.PI;
+function P(t){return [Math.sin(B*t)*Math.cos(A*t), Math.sin(A*t), Math.cos(B*t)*Math.cos(A*t)];}
+function rotY(p,d){return [p[0]*Math.cos(d)+p[2]*Math.sin(d), p[1], -p[0]*Math.sin(d)+p[2]*Math.cos(d)];}
+const C1=[],C2=[]; {const N=7000; for(let i=0;i<=N;i++){const p=P(i/N*TMAX);C1.push(p);C2.push(rotY(p,OFF));}}
+
+// узлы плетения: точки, где нить C2 пересекает нить C1 (общая 3D-точка), не на полюсе
+function knots(){
+  const q=0.025, thr=0.025, dedup=0.11, M=8000;
+  const Hh=new Map(), key=(a,b,c)=>a+'_'+b+'_'+c;
+  for(let i=0;i<M;i++){const p=P(i/M*TMAX);const gx=Math.round(p[0]/q),gy=Math.round(p[1]/q),gz=Math.round(p[2]/q);
+    const k=key(gx,gy,gz);(Hh.get(k)||Hh.set(k,[]).get(k)).push(p);}
+  const out=[];
+  for(let i=0;i<M;i++){const p=rotY(P(i/M*TMAX),OFF); if(Math.abs(p[1])>=0.95)continue;
+    const gx=Math.round(p[0]/q),gy=Math.round(p[1]/q),gz=Math.round(p[2]/q);
+    let near=false;
+    for(let dx=-1;dx<=1&&!near;dx++)for(let dy=-1;dy<=1&&!near;dy++)for(let dz=-1;dz<=1&&!near;dz++){
+      const arr=Hh.get(key(gx+dx,gy+dy,gz+dz)); if(!arr)continue;
+      for(const o of arr){if((o[0]-p[0])**2+(o[1]-p[1])**2+(o[2]-p[2])**2<thr*thr){near=true;break;}}}
+    if(near&&out.every(o=>(o[0]-p[0])**2+(o[1]-p[1])**2+(o[2]-p[2])**2>dedup*dedup))out.push(p);
+  }
+  return out;
+}
+const KN=knots();
+
+function proj(p){let x=p[0]*Math.cos(spin)+p[2]*Math.sin(spin);
+  let z=-p[0]*Math.sin(spin)+p[2]*Math.cos(spin);let y=p[1];
+  let y2=y*Math.cos(tilt)-z*Math.sin(tilt);let z2=y*Math.sin(tilt)+z*Math.cos(tilt);return [x,y2,z2];}
+function scr(p){const R=Math.min(W,H)*0.40,cx=W/2,cy=H/2;const q=proj(p);return [cx+R*q[0],cy-R*q[1],q[2]];}
+function drawCurve(C,color){for(let i=0;i<C.length-1;i++){const a=scr(C[i]),b=scr(C[i+1]);
+  const d=(a[2]+b[2])/2;ctx.strokeStyle=color;ctx.globalAlpha=0.45+0.5*(d+1)/2;ctx.lineWidth=1.7;
+  ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();}ctx.globalAlpha=1;}
+
+function frame(){
+  ctx.clearRect(0,0,W,H);
+  const R=Math.min(W,H)*0.40,cx=W/2,cy=H/2;
+  ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.stroke();
+  drawCurve(C1,'#ffd98a'); drawCurve(C2,'#ffb74d');
+  if(showKnots) for(const p of KN){const s=scr(p);const front=s[2]>=0;
+    ctx.globalAlpha=front?1:0.4;ctx.fillStyle='#ff6b6b';
+    if(front){ctx.shadowColor='#ff6b6b';ctx.shadowBlur=6;}
+    ctx.beginPath();ctx.arc(s[0],s[1],3.2,0,7);ctx.fill();ctx.shadowBlur=0;ctx.globalAlpha=1;}
+  for(const p of [[0,1,0],[0,-1,0]]){const s=scr(p);ctx.fillStyle='#7fd4ff';
+    ctx.shadowColor='#7fd4ff';ctx.shadowBlur=8;ctx.beginPath();ctx.arc(s[0],s[1],5,0,7);ctx.fill();ctx.shadowBlur=0;}
+  document.getElementById('cnt').textContent=`узлов плетения: ${KN.length} · лепестков на полюсе: 10`;
+  if(tSpin!==null){spin+=(tSpin-spin)*0.12;tilt+=(tTilt-tilt)*0.12;
+    if(Math.abs(tSpin-spin)<0.001&&Math.abs(tTilt-tilt)<0.001){spin=tSpin;tilt=tTilt;tSpin=null;}}
+  else if(rot&&!dragging)spin+=0.006;
+  requestAnimationFrame(frame);
+}
+document.getElementById('pole').onclick=()=>{tSpin=0;tTilt=Math.PI/2;rot=false;document.getElementById('spin').classList.remove('on');};
+document.getElementById('side').onclick=()=>{tSpin=0;tTilt=0.25;rot=false;document.getElementById('spin').classList.remove('on');};
+document.getElementById('spin').onclick=function(){rot=!rot;tSpin=null;this.classList.toggle('on',rot);};
+document.getElementById('knots').onclick=function(){showKnots=!showKnots;this.classList.toggle('on',showKnots);};
+document.getElementById('knots').classList.add('on');
+cv.addEventListener('pointerdown',e=>{dragging=true;rot=false;tSpin=null;px=e.clientX;py=e.clientY;cv.setPointerCapture(e.pointerId);});
+cv.addEventListener('pointermove',e=>{if(!dragging)return;spin+=(e.clientX-px)*0.01;
+  tilt=Math.max(-1.6,Math.min(1.6,tilt+(e.clientY-py)*0.01));px=e.clientX;py=e.clientY;});
+cv.addEventListener('pointerup',()=>dragging=false);
+resize();frame();
+</script>
