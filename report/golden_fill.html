@@ -1,0 +1,108 @@
+<meta charset="utf-8">
+<title>Одна нить, ровная везде — иррациональное заполнение</title>
+<style>
+  :root{--bg:#05070e;--panel:#111726;--ink:#e8ecf5;--muted:#8b97b4;--gold:#ffd98a;--cyan:#7fd4ff;--line:#243049;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{display:flex;min-height:100%;flex-wrap:wrap}
+  .stage{flex:1 1 480px;position:relative;min-height:62vh}
+  canvas{display:block;width:100%;height:100%}
+  .side{flex:0 0 320px;max-width:100%;padding:22px;background:var(--panel);border-left:1px solid var(--line)}
+  h1{font-size:17px;margin:0 0 6px}
+  .sub{color:var(--muted);font-size:12.5px;line-height:1.55;margin:0 0 14px}
+  .btns{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  button{background:#1a2338;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:13px;cursor:pointer}
+  button.on{border-color:var(--gold);color:var(--gold)}
+  .big{font-size:15px;font-weight:600;margin:8px 0 2px}
+  .kv{font-size:13px;line-height:1.7;color:var(--muted)}
+  .tiers{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.6}
+  code{background:#0c1426;padding:1px 5px;border-radius:4px;color:#a9c2ff;font-size:11px}
+</style>
+
+<div class="wrap">
+  <div class="stage"><canvas id="c"></canvas></div>
+  <div class="side">
+    <h1>Одна нить — ровная везде</h1>
+    <p class="sub">Раз отношение частот <b>иррационально</b>, нить <b>не замыкается</b> и
+      заполняет шар <b>равномерно всюду</b> — одна бесконечная нить. Это и есть «сшивка».</p>
+
+    <div class="btns">
+      <button id="rat">5:3 — рациональное</button>
+      <button id="phi" class="on">φ — золото</button>
+      <button id="pi">π — видео</button>
+    </div>
+    <div class="btns"><button id="restart">↻ заново</button></div>
+
+    <p class="big" id="verdict" style="color:var(--gold)"></p>
+    <div class="kv" id="stat"></div>
+
+    <div class="tiers">
+      ◇ <code>A=5</code> (широта), <code>B=A·r</code> (долгота). r рационально → замыкается
+      (период, 5 лепестков, неровно). r иррационально → одна бесконечная нить, ровно везде.
+      φ «самое иррациональное» → заполняет ровнее всех (квазикристалл, подсолнух).
+      5:3 — фибоначчиево приближение к φ.
+    </div>
+  </div>
+</div>
+
+<script>
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+let W,H,DPR;
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);const r=cv.getBoundingClientRect();
+  W=r.width;H=r.height;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);clearAll();}
+window.addEventListener('resize',resize);
+
+const PHI=(1+Math.sqrt(5))/2;
+const A=5;
+const MODES={rat:{B:3, rational:true, name:'5:3 (рациональное)'},
+             phi:{B:5/PHI, rational:false, name:'φ золото (иррациональное)'},
+             pi:{B:Math.PI, rational:false, name:'π (иррациональное, видео)'}};
+let mode='phi', idx=0, spin=0.6, tilt=0.5;
+const DT=0.0025;                         // шаг по t
+const PER_FRAME=260;
+
+function P(t){const B=MODES[mode].B;
+  return [Math.sin(B*t)*Math.cos(A*t), Math.sin(A*t), Math.cos(B*t)*Math.cos(A*t)];}
+function scr(p){const R=Math.min(W,H)*0.40,cx=W/2,cy=H/2;
+  let x=p[0]*Math.cos(spin)+p[2]*Math.sin(spin), z=-p[0]*Math.sin(spin)+p[2]*Math.cos(spin), y=p[1];
+  let y2=y*Math.cos(tilt)-z*Math.sin(tilt), z2=y*Math.sin(tilt)+z*Math.cos(tilt);
+  return [cx+R*x, cy-R*y2, z2];}
+
+function clearAll(){ctx.clearRect(0,0,W,H);const R=Math.min(W,H)*0.40;
+  ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(W/2,H/2,R,0,7);ctx.stroke();
+  idx=0;}
+function restart(){clearAll();}
+
+function frame(){
+  // накопление: рисуем новые точки поверх (canvas не чистим)
+  let prev=null;
+  for(let k=0;k<PER_FRAME;k++){
+    const t=idx*DT; const p=P(t); const s=scr(p);
+    const front=s[2]>=0;
+    ctx.fillStyle= front? 'rgba(255,217,138,0.85)' : 'rgba(127,180,255,0.35)';
+    ctx.fillRect(s[0], s[1], 1.3, 1.3);
+    idx++;
+    // для рационального: период = 2π (при целом A и целом B). 5:3 -> замыкается на 2π.
+  }
+  const tNow=idx*DT, turns=(tNow/(2*Math.PI));
+  const m=MODES[mode];
+  document.getElementById('verdict').textContent = m.rational
+    ? '5:3 замкнулось — 5 лепестков, дальше повтор'
+    : 'одна нить, не замыкается — заполняет ровно';
+  document.getElementById('verdict').style.color = m.rational? '#ff9b6b':'#ffd98a';
+  document.getElementById('stat').innerHTML =
+    `режим: <b style="color:#e8ecf5">${m.name}</b><br>`+
+    `B/A = <b>${(m.B/A).toFixed(4)}</b> ${m.rational?'(дробь)':'(иррационально)'}<br>`+
+    `пройдено оборотов: <b>${turns.toFixed(1)}</b>`;
+  // рациональное быстро насыщается — можно остановить рост
+  if(m.rational && tNow>2*Math.PI*3){ /* уже всё нарисовано, продолжаем поверх (без изменений) */ }
+  requestAnimationFrame(frame);
+}
+function setMode(m,btn){mode=m;['rat','phi','pi'].forEach(x=>document.getElementById(x).classList.toggle('on',x===m));clearAll();}
+document.getElementById('rat').onclick=()=>setMode('rat');
+document.getElementById('phi').onclick=()=>setMode('phi');
+document.getElementById('pi').onclick=()=>setMode('pi');
+document.getElementById('restart').onclick=restart;
+resize();frame();
+</script>
