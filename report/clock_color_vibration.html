@@ -1,0 +1,135 @@
+<meta charset="utf-8">
+<title>Часы: число · цвет · вибрация · двойственность · чистота</title>
+<style>
+  :root{--bg:#0a0e1a;--panel:#111726;--ink:#e8ecf5;--muted:#8b97b4;--line:#243049;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{display:flex;min-height:100%;flex-wrap:wrap}
+  .stage{flex:1 1 460px;display:flex;align-items:center;justify-content:center;padding:16px;min-height:56vh}
+  svg{width:100%;max-width:560px;height:auto;touch-action:manipulation}
+  .seg{cursor:pointer;transition:opacity .15s}
+  .seg:hover{opacity:.85}
+  .num{font-weight:700;font-size:15px;pointer-events:none;fill:#0a0e1a}
+  .side{flex:0 0 340px;max-width:100%;padding:22px;background:var(--panel);border-left:1px solid var(--line)}
+  h1{font-size:17px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:12px;line-height:1.5;margin:0 0 16px}
+  .swatch{height:74px;border-radius:12px;border:1px solid var(--line);margin:6px 0 4px;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px}
+  .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:14px 0 5px}
+  .kv{font-size:14px;line-height:1.8}
+  .kv b{color:var(--ink)}
+  .dual{display:flex;gap:10px;align-items:center;margin-top:4px}
+  .dchip{width:34px;height:34px;border-radius:8px;border:1px solid var(--line)}
+  input[type=range]{width:100%;accent-color:#ffc14d}
+  .puritybar{height:14px;border-radius:7px;margin:6px 0 2px;
+    background:linear-gradient(90deg,#fff,var(--pure,#888),#000)}
+  .tiers{margin-top:16px;padding-top:12px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.6}
+  code{background:#0c1426;padding:1px 5px;border-radius:4px;color:#a9c2ff;font-size:11px}
+</style>
+
+<div class="wrap">
+  <div class="stage">
+    <svg id="clock" viewBox="-260 -260 520 520" aria-label="цветные часы"></svg>
+  </div>
+  <div class="side">
+    <h1>Число · цвет · вибрация</h1>
+    <p class="sub">Каждому часу — свой цвет (= частота света). У цвета есть
+      <b>двойственность</b> (пара-дополнение напротив) и <b>чистота</b> (белый↔чёрный).
+      Кликни отметку.</p>
+
+    <div class="swatch" id="swatch">—</div>
+    <div class="kv" id="info"></div>
+
+    <div class="lbl">двойственность (дополнение, +6)</div>
+    <div class="dual"><div class="dchip" id="dchip"></div><div class="kv" id="dinfo"></div></div>
+
+    <div class="lbl">чистота: белый → цвет → чёрный</div>
+    <div class="puritybar" id="pbar"></div>
+    <input type="range" id="purity" min="0" max="100" value="50">
+    <div class="kv" id="pinfo" style="font-size:12.5px;color:var(--muted)"></div>
+
+    <div class="tiers">
+      ◇ цвет = частота света (спектр); вибрация = та же частота (a·ω=c).
+      ○ привязка число↔оттенок (12-часовое колесо, 30°) — наша разметка.
+      Дополнение = диаметр (пара n, n+6). Чистота = светлота (тон/тень).
+      <code>n=12</code> — розовый, внеспектральный (смесь красного и фиолетового).
+    </div>
+  </div>
+</div>
+
+<script>
+const C=299792.458;                          // скорость света, нм·ТГц (=3e8 м/с)
+const svg=document.getElementById('clock');
+let sel=12, purity=50;
+
+function hue(n){return ((n-1)*30)%360;}       // число → оттенок (12-часовое колесо)
+function dual(n){return ((n+5)%12)+1;}        // дополнение = +6 (диаметр)
+function hueToWL(h){ // приближённая длина волны (нм) для спектральной части
+  if(h<=300) return Math.round(700 - h*(300/300)); // 0°→700(крас) .. 300°→400(фиол)
+  return null;                                // 300..360 = розовый, внеспектральный
+}
+function css(n, L){return `hsl(${hue(n)}, 85%, ${L}%)`;}
+function pureCss(n){return `hsl(${hue(n)}, 85%, 50%)`;}
+function purityL(v){return 97 - v*0.94;}      // 0→белый(97) .. 50→чистый(50) .. 100→чёрный(3)
+
+// build clock
+function build(){
+  svg.innerHTML='';
+  const R0=110, R1=230, RL=170;
+  for(let n=1;n<=12;n++){
+    const a0=(hue0(n)-15)*Math.PI/180, a1=(hue0(n)+15)*Math.PI/180;
+    const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+    const x0=Math.cos(a0), y0=Math.sin(a0), x1=Math.cos(a1), y1=Math.sin(a1);
+    p.setAttribute('d',`M ${R0*x0} ${R0*y0} L ${R1*x0} ${R1*y0} A ${R1} ${R1} 0 0 1 ${R1*x1} ${R1*y1} L ${R0*x1} ${R0*y1} A ${R0} ${R0} 0 0 0 ${R0*x0} ${R0*y0} Z`);
+    p.setAttribute('fill',pureCss(n));
+    p.setAttribute('class','seg');
+    p.setAttribute('stroke', n===sel?'#fff':(n===dual(sel)?'#ffd98a':'#0a0e1a'));
+    p.setAttribute('stroke-width', n===sel?4:(n===dual(sel)?3:1.5));
+    p.onclick=()=>{sel=n;render();};
+    svg.appendChild(p);
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    const am=hue0(n)*Math.PI/180;
+    t.setAttribute('x',RL*Math.cos(am));t.setAttribute('y',RL*Math.sin(am)+5);
+    t.setAttribute('text-anchor','middle');t.setAttribute('class','num');
+    t.textContent=n; svg.appendChild(t);
+  }
+  // center dot
+  const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  c.setAttribute('r',26);c.setAttribute('fill','#0c1426');c.setAttribute('stroke','#243049');
+  svg.appendChild(c);
+}
+// position of hour n on the dial (12 at top, clockwise) — angle in degrees for geometry
+function hour_angle(n){return n*30-90;}       // n=12→270-... let's keep 12 top
+function hue0(n){return (n%12)*30-90;}         // geometry angle: 12 at top, clockwise
+
+function render(){
+  build();
+  const L=purityL(purity);
+  const swColor=css(sel, L);
+  const sw=document.getElementById('swatch');
+  sw.style.background=swColor; sw.textContent=sel;
+  sw.style.color = L>55?'#0a0e1a':'#fff';
+  const wl=hueToWL(hue(sel));
+  const freq = wl? (C/wl).toFixed(0) : null;
+  document.getElementById('info').innerHTML =
+    `число <b>${sel}</b> · оттенок <b>${hue(sel)}°</b><br>`+
+    (wl? `вибрация: <b>${wl} нм</b> ≈ <b>${freq} ТГц</b> (частота света)`
+       : `вибрация: <b>внеспектральный</b> (розовый = красный+фиолетовый)`);
+  // dual
+  const d=dual(sel);
+  document.getElementById('dchip').style.background=pureCss(d);
+  const dwl=hueToWL(hue(d));
+  document.getElementById('dinfo').innerHTML =
+    `число <b>${d}</b> · оттенок <b>${hue(d)}°</b> — противоположный цвет`;
+  // purity bar gradient uses pure color
+  document.getElementById('pbar').style.setProperty('--pure', pureCss(sel));
+  document.getElementById('pbar').style.background=`linear-gradient(90deg,#fff, ${pureCss(sel)}, #000)`;
+  const state = purity<20?'почти белый (свет)':purity>80?'почти чёрный (тень)':
+                Math.abs(purity-50)<10?'чистый цвет':(purity<50?'светлый тон':'тёмный тон');
+  document.getElementById('pinfo').textContent = `чистота ${purity}/100 — ${state}`;
+}
+
+document.getElementById('purity').oninput=e=>{purity=+e.target.value;render();};
+render();
+</script>
