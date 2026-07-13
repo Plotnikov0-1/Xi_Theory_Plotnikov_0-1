@@ -1,0 +1,131 @@
+<!DOCTYPE html><html lang="ru"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Оператор A:B · плоскость + шар</title>
+<style>
+  :root{--bg:#15120E;--panel:#1E1A14;--edge:#332A1E;--grid:#3A2F20;
+    --amber:#F2A93B;--amber-hi:#FFC96A;--teal:#5BB9AE;--text:#D9CFBE;--dim:#8A7E6B;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .wrap{max-width:560px;margin:0 auto;padding:16px 14px 40px}
+  h1{font-size:15px;font-weight:600;margin:0 0 2px}
+  .sub{font-size:12px;color:var(--dim);margin:0 0 14px;line-height:1.5}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:430px){.grid2{grid-template-columns:1fr}}
+  .scope{position:relative;aspect-ratio:1/1;border:1px solid var(--edge);border-radius:10px;
+    background:radial-gradient(ellipse at 50% 45%,#221D15 0%,#15120E 80%);overflow:hidden}
+  canvas{position:absolute;inset:0;width:100%;height:100%}
+  .tag{position:absolute;left:9px;top:8px;font-family:ui-monospace,monospace;font-size:10px;color:var(--dim);pointer-events:none}
+  .lab{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin:16px 0 8px;display:flex;justify-content:space-between}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-family:ui-monospace,monospace;font-size:13px;padding:8px 11px;border-radius:8px;border:1px solid var(--edge);
+    background:var(--panel);color:var(--text);cursor:pointer;transition:.15s;min-width:46px;text-align:center}
+  .chip.on{border-color:var(--amber);color:var(--amber-hi);box-shadow:0 0 0 1px var(--amber) inset}
+  .row-b .chip.on{border-color:var(--teal);color:#9fe0d8;box-shadow:0 0 0 1px var(--teal) inset}
+  .read{margin-top:18px;font-family:ui-monospace,monospace;font-size:14px;line-height:1.8;
+    border-left:2px solid var(--edge);padding-left:12px}
+  .read .g{color:var(--amber-hi);font-weight:600}
+  .read .t{color:#9fe0d8}
+  .phase{margin-top:16px}
+  .phase label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);display:flex;justify-content:space-between;margin-bottom:6px}
+  input[type=range]{width:100%;accent-color:var(--amber)}
+</style></head><body>
+<div class="wrap">
+  <h1>Оператор A : B</h1>
+  <p class="sub">Отношение частот = оператор. Слева — фазовая плоскость, справа — та же пара на шаре (нить). Рационально → замыкается; иррационально → заполняет.</p>
+
+  <div class="grid2">
+    <div class="scope"><canvas id="flat"></canvas><div class="tag">плоскость</div></div>
+    <div class="scope"><canvas id="sph"></canvas><div class="tag">шар (нить)</div></div>
+  </div>
+
+  <div class="lab row-a"><span>A — частота (широта)</span><span>горизонталь / вертикаль шара</span></div>
+  <div class="chips row-a" id="chipsA"></div>
+  <div class="lab row-b"><span>B — частота (долгота)</span><span>вертикаль / долгота шара</span></div>
+  <div class="chips row-b" id="chipsB"></div>
+
+  <div class="phase"><label><span>фаза δ</span><span id="dv">0.00</span></label>
+    <input id="phase" type="range" min="0" max="628" value="0"></div>
+
+  <div class="read" id="read"></div>
+</div>
+
+<script>
+const PHI=(1+Math.sqrt(5))/2;
+const OPTS=[
+  {t:"1",v:1},{t:"2",v:2},{t:"3",v:3},{t:"4",v:4},{t:"5",v:5},
+  {t:"φ",v:PHI},{t:"√2",v:Math.SQRT2},{t:"√3",v:Math.sqrt(3)},{t:"π",v:Math.PI}
+];
+let A=4,B=2,delta=0;
+const flat=document.getElementById("flat"),fx=flat.getContext("2d");
+const sph=document.getElementById("sph"),sxc=sph.getContext("2d");
+let spin=0.6,tilt=0.5,tracer=0,flatCurve=[],sphCurve=[],closed=true;
+
+function gcd(a,b){return b<1e-9?a:gcd(b,a%b);}
+function ratFrac(x,maxDen=32){for(let q=1;q<=maxDen;q++){const p=Math.round(x*q);
+  if(p>0&&Math.abs(x-p/q)<1e-7){const g=gcd(p,q);return {p:Math.round(p/g),q:Math.round(q/g)};}}return null;}
+function getCSS(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+
+function build(){
+  const wa=OPTS[A].v, wb=OPTS[B].v, f=ratFrac(wa/wb);
+  closed=!!f;
+  let tmax,N;
+  if(closed){ tmax=2*Math.PI*f.q; N=3000; }   // ровно один общий период
+  else { tmax=240*Math.PI; N=9000; }
+  flatCurve=[]; sphCurve=[];
+  for(let i=0;i<=N;i++){const t=tmax*i/N;
+    flatCurve.push([Math.sin(wa*t+delta), Math.sin(wb*t)]);
+    // шар: наша нить {sin(B t)cos(A t), sin(A t), cos(B t)cos(A t)}
+    sphCurve.push([Math.sin(wb*t)*Math.cos(wa*t), Math.sin(wa*t), Math.cos(wb*t)*Math.cos(wa*t)]);
+  }
+  const r=document.getElementById("read");
+  if(closed) r.innerHTML=`оператор <span class="g">${f.p} : ${f.q}</span> — рационально<br>`+
+    `фигура <span class="g">замыкается</span>, период 2π·${f.q}<br>число самопересечений конечно`;
+  else r.innerHTML=`оператор <span class="t">${(wa/wb).toFixed(5)}</span> — иррационально (${OPTS[A].t}/${OPTS[B].t})<br>`+
+    `<span class="t">не замыкается</span>, заполняет равномерно<br>одна бесконечная нить`;
+}
+
+function resize(c){const r=c.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);
+  c.width=r.width*dpr;c.height=r.height*dpr;c.getContext("2d").setTransform(dpr,0,0,dpr,0,0);}
+
+function drawFlat(){
+  const w=flat.clientWidth,h=flat.clientHeight,pad=22;fx.clearRect(0,0,w,h);
+  fx.strokeStyle=getCSS("--grid");fx.lineWidth=1;fx.beginPath();
+  fx.moveTo(w/2,pad);fx.lineTo(w/2,h-pad);fx.moveTo(pad,h/2);fx.lineTo(w-pad,h/2);fx.stroke();
+  const X=x=>pad+(x*0.5+0.5)*(w-2*pad),Y=y=>pad+(-y*0.5+0.5)*(h-2*pad);
+  const col=closed?getCSS("--amber"):getCSS("--teal");
+  fx.globalAlpha=closed?0.5:0.22;fx.strokeStyle=col;fx.lineWidth=1.3;fx.beginPath();
+  for(let i=0;i<flatCurve.length;i++){const p=flatCurve[i];i?fx.lineTo(X(p[0]),Y(p[1])):fx.moveTo(X(p[0]),Y(p[1]));}
+  fx.stroke();fx.globalAlpha=1;
+  const tr=80;for(let k=tr;k>=0;k--){const idx=(tracer-k+flatCurve.length)%flatCurve.length;const p=flatCurve[idx];
+    fx.globalAlpha=((tr-k)/tr)**2;fx.fillStyle=k<5?getCSS("--amber-hi"):col;
+    fx.beginPath();fx.arc(X(p[0]),Y(p[1]),k<5?2.4:1.4,0,7);fx.fill();}fx.globalAlpha=1;
+}
+function scr(p,w,h){const R=Math.min(w,h)*0.40,cx=w/2,cy=h/2;
+  let x=p[0]*Math.cos(spin)+p[2]*Math.sin(spin),z=-p[0]*Math.sin(spin)+p[2]*Math.cos(spin),y=p[1];
+  let y2=y*Math.cos(tilt)-z*Math.sin(tilt),z2=y*Math.sin(tilt)+z*Math.cos(tilt);return [cx+R*x,cy-R*y2,z2];}
+function drawSph(){
+  const w=sph.clientWidth,h=sph.clientHeight;sxc.clearRect(0,0,w,h);
+  const R=Math.min(w,h)*0.40;sxc.strokeStyle=getCSS("--grid");sxc.lineWidth=1;sxc.beginPath();sxc.arc(w/2,h/2,R,0,7);sxc.stroke();
+  const col=closed?getCSS("--amber"):getCSS("--teal");
+  for(let i=0;i<sphCurve.length-1;i++){const a=scr(sphCurve[i],w,h),b=scr(sphCurve[i+1],w,h);
+    const d=(a[2]+b[2])/2;sxc.strokeStyle=col;sxc.globalAlpha=(closed?0.5:0.28)*(0.4+0.6*(d+1)/2);sxc.lineWidth=1.2;
+    sxc.beginPath();sxc.moveTo(a[0],a[1]);sxc.lineTo(b[0],b[1]);sxc.stroke();}sxc.globalAlpha=1;
+  spin+=0.004;
+}
+function loop(){tracer=(tracer+(closed?6:14))%flatCurve.length;drawFlat();drawSph();requestAnimationFrame(loop);}
+
+function chips(id,which){const box=document.getElementById(id);
+  OPTS.forEach((o,i)=>{const c=document.createElement("div");c.className="chip";c.textContent=o.t;
+    c.onclick=()=>{which==="A"?A=i:B=i;sync();};box.appendChild(c);});}
+function sync(){
+  document.querySelectorAll("#chipsA .chip").forEach((c,i)=>c.classList.toggle("on",i===A));
+  document.querySelectorAll("#chipsB .chip").forEach((c,i)=>c.classList.toggle("on",i===B));
+  build();
+}
+document.getElementById("phase").oninput=e=>{delta=e.target.value/100;
+  document.getElementById("dv").textContent=delta.toFixed(2);build();};
+chips("chipsA","A");chips("chipsB","B");
+addEventListener("resize",()=>{resize(flat);resize(sph);});
+resize(flat);resize(sph);sync();loop();
+</script>
+</body></html>
