@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="ru"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Часы-спираль · фундамент 1–10(0)</title>
+<title>Часы-спираль из центра · фундамент 1–10(0)</title>
 <style>
   :root{--bg:#14110c;--panel:#1d1810;--edge:#33291b;--amber:#f2a93b;--amber-hi:#ffc96a;--cyan:#5bb9ae;--dim:#8a7e6b;--text:#d9cfbe}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -17,76 +17,67 @@
   .leg b{color:var(--amber-hi)} .leg .c{color:var(--cyan)}
 </style></head><body>
 <div class="wrap">
-  <h1>Часы — это СПИРАЛЬ, а не замкнутый круг</h1>
-  <p class="sub">Фундаментальный виток = <b style="color:var(--amber-hi)">1–10 (0)</b>. Десятка замыкает виток и переходит на новый. <b style="color:var(--cyan)">11, 12</b> ложатся над 1, 2 — это <b style="color:var(--cyan)">перекрытие</b> (движение вперёд). Проекция сворачивает спираль в круг и теряет движение.</p>
-  <canvas id="c" width="540" height="620"></canvas>
+  <h1>Всё развивается ИЗ ЦЕНТРА · часы = золотая спираль</h1>
+  <p class="sub"><b style="color:#8a7e6b">0</b> — центр (источник/живой центр). Фундаментальный виток <b style="color:var(--amber-hi)">1–10</b> — внутренний. Десятка замыкает виток и уходит наружу на новый. <b style="color:var(--cyan)">11, 12</b> — тот же угол, что 1, 2, но <b style="color:var(--cyan)">на виток НАРУЖУ</b> (радиус ×φ). Так растём из центра по спирали.</p>
+  <canvas id="c" width="540" height="560"></canvas>
   <div class="row">
-    <button id="btnMorph" class="on">спираль ⇄ проекция на круг</button>
+    <button id="btnMode" class="on">спираль ⇄ оболочки</button>
     <button id="btnSpin" class="on">вращение</button>
   </div>
   <div class="leg">
-    <b>1–10(0)</b> — фундаментальный виток (замыкание на десятке, там же переход) ·
-    <span class="c">11–20</span> — следующий виток (11 над 1, 12 над 2) ·
-    <span style="color:#6b6152">21–24</span> — «22 конец, 23–24 чуть вперёд, остальное для удобства».<br>
-    Ось винта = стрела времени (необратимое) · круг = период (обратимое) · вместе = спираль.
-    Макро-виток = год/месяц. Геликоид Дюрера, 1525.
+    <b>1–10(0)</b> внутренний виток (0 в центре, замыкание на 10) ·
+    <span class="c">11–20</span> следующий виток наружу (11 над 1, ×φ) ·
+    <span style="color:#6b6152">21–24</span> «22 конец, 23–24 чуть вперёд, остальное для удобства».<br>
+    Из центра растут: оболочки атома (n из ядра), живой центр R²=3 (тетраэдр→куб→додекаэдр — один центр),
+    центральная 5 «везде», фигуры Хладни/гармонографа. Каждый виток радиуса ×φ (золото).
   </div>
 </div>
 <script>
 const cv=document.getElementById('c'), g=cv.getContext('2d');
-const W=cv.width, H=cv.height, cx=W*0.42, baseY=H*0.86, R=W*0.30, pitch=150, tilt=0.34;
-const PER=10;                 // период витка = 10 (фундамент)
-let s=1;                      // 0 = плоский круг (проекция), 1 = спираль
-let sTarget=1, spin=true, rot=0;
+const W=cv.width,H=cv.height, cx=W*0.5, cy=H*0.52, PHI=(1+Math.sqrt(5))/2, PER=10;
+const rMax=Math.min(W,H)*0.42, r0=rMax/Math.pow(PHI,2.4);
+let mode=1, modeT=1, spin=true, rot=0;   // mode 1 = спираль (плавно), 0 = оболочки (кольца)
 function col(k){ if(k<=10) return '#f2a93b'; if(k<=20) return '#5bb9ae'; return '#6b6152'; }
-function pt(k){                // положение числа k
-  const th = rot + (k)*(2*Math.PI/PER) - Math.PI/2;
-  const z  = s*pitch*(k)/PER;
-  return { x: cx + R*Math.cos(th), y: baseY - z - R*Math.sin(th)*tilt, back: Math.sin(th)>0 };
+function radius(k){
+  const cont = r0*Math.pow(PHI, k/PER);            // непрерывная золотая спираль
+  const shell= r0*Math.pow(PHI, Math.ceil(k/PER)); // округление до кольца-оболочки
+  return mode*cont + (1-mode)*shell;
 }
+function pos(k){ const th=rot + k*(2*Math.PI/PER) - Math.PI/2, r=radius(k); return {x:cx+r*Math.cos(th), y:cy+r*Math.sin(th)}; }
 function draw(){
   g.clearRect(0,0,W,H);
-  // ось
-  g.strokeStyle='#33291b'; g.lineWidth=1;
-  g.beginPath(); g.moveTo(cx, baseY+18); g.lineTo(cx, baseY - s*pitch*2.6); g.stroke();
-  // основание-круг (эллипс)
-  g.strokeStyle='#2a2216'; g.beginPath();
-  for(let a=0;a<=360;a+=6){const r=a*Math.PI/180; g.lineTo(cx+R*Math.cos(r), baseY - R*Math.sin(r)*tilt);} g.stroke();
-  // спиральная линия
-  g.lineWidth=2; g.strokeStyle='rgba(242,169,59,.5)';
+  // кольца-оболочки (призрачно)
+  g.strokeStyle='rgba(51,41,27,.8)';
+  for(let t=1;t<=3;t++){ const r=r0*Math.pow(PHI,t); g.beginPath(); g.arc(cx,cy,r,0,2*Math.PI); g.stroke(); }
+  // спиральная линия из центра
   let started=false;
-  for(let k=0;k<=24.2;k+=0.05){
-    const p=pt(k);
-    g.strokeStyle = p.back ? 'rgba(140,126,107,.35)' : 'rgba(242,169,59,.6)';
-    if(!started){ g.beginPath(); g.moveTo(p.x,p.y); started=true; }
-    else { g.lineTo(p.x,p.y); g.stroke(); g.beginPath(); g.moveTo(p.x,p.y);} }
+  g.lineWidth=2;
+  for(let k=0;k<=24.3;k+=0.04){
+    const p=pos(k); g.strokeStyle = k<=10?'rgba(242,169,59,.55)':(k<=20?'rgba(91,185,174,.5)':'rgba(140,126,107,.4)');
+    if(!started){g.beginPath();g.moveTo(p.x,p.y);started=true;} else {g.lineTo(p.x,p.y);g.stroke();g.beginPath();g.moveTo(p.x,p.y);} }
+  // радиальные лучи 1..10 (углы фундамента) — «спицы»
+  g.strokeStyle='rgba(51,41,27,.6)'; g.lineWidth=1;
+  for(let a=1;a<=10;a++){ const th=rot+a*(2*Math.PI/PER)-Math.PI/2; g.beginPath(); g.moveTo(cx,cy); g.lineTo(cx+rMax*Math.cos(th), cy+rMax*Math.sin(th)); g.stroke(); }
+  // центр 0
+  g.fillStyle='#ffc96a'; g.beginPath(); g.arc(cx,cy,5,0,2*Math.PI); g.fill();
+  g.fillStyle='#8a7e6b'; g.font='bold 12px ui-monospace'; g.textAlign='center'; g.textBaseline='middle';
+  g.fillText('0', cx, cy-13);
   // числа
-  g.textAlign='center'; g.textBaseline='middle'; g.font='bold 13px ui-monospace,monospace';
-  for(let k=1;k<=24;k++){
-    const p=pt(k), c=col(k);
-    g.globalAlpha = p.back?0.5:1;
-    g.fillStyle = (k===10||k===20) ? '#ffc96a' : c;
-    g.beginPath(); g.arc(p.x,p.y, (k===10||k===11||k===12)?5.5:4, 0, 2*Math.PI); g.fill();
-    g.fillStyle = (k===10||k===20)?'#ffc96a':c;
-    g.fillText(k, p.x + (p.x<cx?-13:13), p.y);
-    g.globalAlpha=1;
+  g.font='bold 13px ui-monospace,monospace';
+  for(let k=1;k<=24;k++){ const p=pos(k), c=col(k);
+    g.fillStyle=(k===10||k===20)?'#ffc96a':c;
+    g.beginPath(); g.arc(p.x,p.y,(k===10||k===11||k===12)?5.5:4,0,2*Math.PI); g.fill();
+    g.fillText(k, p.x, p.y-11);
   }
-  // 0 в центре основания
-  g.fillStyle='#8a7e6b'; g.beginPath(); g.arc(cx, baseY, 5, 0, 2*Math.PI); g.fill();
-  g.fillText('0', cx+13, baseY);
-  // подписи перекрытия
+  // подпись перекрытия 11 над 1
   g.font='11px system-ui'; g.fillStyle='#5bb9ae'; g.textAlign='left';
-  if(s>0.5){ const p11=pt(11); g.fillText('перекрытие →', p11.x+16, p11.y-10); }
-  g.fillStyle='#8a7e6b';
-  g.fillText(s>0.5?'СПИРАЛЬ (движение есть)':'ПРОЕКЦИЯ-круг (движения нет)', 12, 18);
+  const p11=pos(11); g.fillText('11 над 1 (×φ наружу)', p11.x+8, p11.y+2);
+  g.fillStyle='#8a7e6b'; g.textAlign='left';
+  g.fillText(mode>0.5?'СПИРАЛЬ из центра':'ОБОЛОЧКИ из центра', 12, 18);
 }
-function tick(){
-  s += (sTarget - s)*0.08;
-  if(spin) rot += 0.004;
-  draw(); requestAnimationFrame(tick);
-}
-document.getElementById('btnMorph').onclick=function(){ sTarget = sTarget>0.5?0:1; this.classList.toggle('on', sTarget>0.5);};
-document.getElementById('btnSpin').onclick=function(){ spin=!spin; this.classList.toggle('on', spin);};
+function tick(){ mode+=(modeT-mode)*0.08; if(spin) rot+=0.004; draw(); requestAnimationFrame(tick); }
+document.getElementById('btnMode').onclick=function(){ modeT=modeT>0.5?0:1; this.classList.toggle('on',modeT>0.5); };
+document.getElementById('btnSpin').onclick=function(){ spin=!spin; this.classList.toggle('on',spin); };
 tick();
 </script>
 </body></html>
