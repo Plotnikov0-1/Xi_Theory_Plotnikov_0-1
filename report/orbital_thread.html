@@ -1,0 +1,188 @@
+<!DOCTYPE html><html lang="ru"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Орбиталь на шаре · n ℓ m</title>
+<style>
+  :root{--bg:#15120E;--panel:#1E1A14;--edge:#332A1E;--grid:#3A2F20;
+    --amber:#F2A93B;--amber-hi:#FFC96A;--teal:#5BB9AE;--text:#D9CFBE;--dim:#8A7E6B;
+    --pos:#F2A93B;--neg:#5BB9AE;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .wrap{max-width:560px;margin:0 auto;padding:16px 14px 40px}
+  h1{font-size:15px;font-weight:600;margin:0 0 2px}
+  .sub{font-size:12px;color:var(--dim);margin:0 0 12px;line-height:1.5}
+  .scope{position:relative;width:100%;aspect-ratio:1/1;border:1px solid var(--edge);border-radius:10px;
+    background:radial-gradient(ellipse at 50% 45%,#201B13 0%,#15120E 80%);overflow:hidden}
+  canvas{position:absolute;inset:0;width:100%;height:100%}
+  .name{position:absolute;left:12px;top:10px;font-family:ui-monospace,monospace;font-size:22px;font-weight:700;color:var(--amber-hi);pointer-events:none}
+  .qn{display:flex;gap:10px;margin-top:16px}
+  .qbox{flex:1;border:1px solid var(--edge);border-radius:10px;background:var(--panel);padding:10px;text-align:center}
+  .qbox .k{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+  .qbox .v{font-family:ui-monospace,monospace;font-size:22px;font-weight:700;color:var(--amber-hi);margin:2px 0}
+  .qbox .btns{display:flex;gap:6px;justify-content:center}
+  .qbox button{width:34px;height:30px;border:1px solid var(--edge);background:#241F17;color:var(--text);
+    border-radius:7px;font-size:16px;cursor:pointer}
+  .read{margin-top:16px;font-family:ui-monospace,monospace;font-size:13.5px;line-height:1.8;border-left:2px solid var(--edge);padding-left:12px}
+  .read b{color:var(--amber-hi)}
+  .read .t{color:var(--teal)}
+  .toggle{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}
+  .toggle button{font-family:ui-monospace,monospace;font-size:12.5px;padding:8px 11px;border:1px solid var(--edge);
+    background:var(--panel);color:var(--text);border-radius:8px;cursor:pointer}
+  .toggle button.on{border-color:var(--amber);color:var(--amber-hi)}
+</style></head><body>
+<div class="wrap">
+  <h1>Орбиталь водорода на шаре</h1>
+  <p class="sub">Настоящая волна Y<sub>ℓ</sub><sup>m</sup>: <span style="color:var(--pos)">оранжевый +</span>, <span style="color:var(--neg)">бирюза −</span>, граница = узел.
+    Долгота волн = <b>|m|</b> (магнитное), широта = ℓ−|m|. Крути пальцем.</p>
+
+  <div class="scope"><canvas id="cv"></canvas><div class="name" id="nm"></div></div>
+
+  <div class="qn">
+    <div class="qbox"><div class="k">n</div><div class="v" id="vn">2</div>
+      <div class="btns"><button data-q="n" data-d="-1">−</button><button data-q="n" data-d="1">+</button></div></div>
+    <div class="qbox"><div class="k">ℓ</div><div class="v" id="vl">1</div>
+      <div class="btns"><button data-q="l" data-d="-1">−</button><button data-q="l" data-d="1">+</button></div></div>
+    <div class="qbox"><div class="k">m</div><div class="v" id="vm">0</div>
+      <div class="btns"><button data-q="m" data-d="-1">−</button><button data-q="m" data-d="1">+</button></div></div>
+  </div>
+
+  <div class="toggle">
+    <button id="tNodes" class="on">узловые линии</button>
+    <button id="tThread">нить-выборка (Erb)</button>
+    <button id="tSpin" class="on">вращение</button>
+  </div>
+
+  <div class="read" id="read"></div>
+</div>
+
+<script>
+let n=2,l=1,m=0;
+let showNodes=true, showThread=false, spinning=true;
+let spin=0.6, tilt=0.5, dragging=false, px=0,py=0;
+const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
+
+// --- присоединённые полиномы Лежандра P_l^m(x), m>=0 ---
+function plm(L,M,x){
+  let pmm=1;
+  if(M>0){let s=Math.sqrt(Math.max(0,(1-x)*(1+x))),f=1;for(let i=1;i<=M;i++){pmm*=-f*s;f+=2;}}
+  if(L===M)return pmm;
+  let pmmp1=x*(2*M+1)*pmm; if(L===M+1)return pmmp1;
+  let pll=0;
+  for(let ll=M+2;ll<=L;ll++){pll=((2*ll-1)*x*pmmp1-(ll+M-1)*pmm)/(ll-M);pmm=pmmp1;pmmp1=pll;}
+  return pll;
+}
+function Yreal(L,M,th,ph){const x=Math.cos(th),am=Math.abs(M),p=plm(L,am,x);
+  return M>=0? p*Math.cos(am*ph) : p*Math.sin(am*ph);}
+
+// --- точки шара с цветом по знаку Y ---
+let PTS=[];
+function buildField(){
+  PTS=[]; let mx=1e-9; const LAT=54, LON=108;
+  const raw=[];
+  for(let i=1;i<LAT;i++){const th=Math.PI*i/LAT;
+    for(let j=0;j<LON;j++){const ph=2*Math.PI*j/LON;
+      const y=Yreal(l,m,th,ph); mx=Math.max(mx,Math.abs(y));
+      raw.push([Math.sin(th)*Math.cos(ph),Math.sin(th)*Math.sin(ph),Math.cos(th),y]);}}
+  for(const r of raw) PTS.push([r[0],r[1],r[2], r[3]/mx]);
+}
+// --- узловые широты: нули P_l^|m|(cosθ) ; узловые меридианы: |m| плоскостей ---
+let NODE_LATS=[], NODE_LONS=[];
+function buildNodes(){
+  NODE_LATS=[]; const am=Math.abs(m);
+  let prev=plm(l,am,Math.cos(0.001));
+  for(let i=1;i<=400;i++){const th=Math.PI*i/400,v=plm(l,am,Math.cos(th));
+    if(prev*v<0)NODE_LATS.push(th-Math.PI/800); prev=v;}
+  NODE_LONS=[];
+  if(am>0)for(let k=0;k<2*am;k++){ // нули cos/sin(am*ph)
+    NODE_LONS.push((m>=0? Math.PI/(2*am) : 0) + k*Math.PI/am);}
+}
+function proj(p){let x=p[0]*Math.cos(spin)+p[1]*Math.sin(spin);
+  let z=-p[0]*Math.sin(spin)+p[1]*Math.cos(spin), y=p[2];
+  let y2=y*Math.cos(tilt)-z*Math.sin(tilt), z2=y*Math.sin(tilt)+z*Math.cos(tilt);
+  return [x,y2,z2];}
+function resize(){const r=cv.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);
+  cv.width=r.width*dpr;cv.height=r.height*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);}
+addEventListener("resize",resize);
+
+// нить Erb: долгота m1=|m| (или 1), широта m2 (чётное, покрывает ℓ)
+function threadPts(){const m1=Math.max(1,Math.abs(m)); let m2=2*Math.max(1,l-Math.abs(m)); if(m2%2)m2++;
+  // gcd=1 подправим
+  const g=(a,b)=>b?g(b,a%b):a; if(g(m1,m2)!==1)m2+=1;
+  const pts=[],N=4000, T=2*Math.PI*(m1/g(m1,m2))* (m2/1) /Math.max(1,m1); // достаточно длинный
+  for(let i=0;i<=3600;i++){const t=2*Math.PI*i/360*3;
+    pts.push([Math.sin(m2*t)*Math.cos(m1*t),Math.sin(m2*t)*Math.sin(m1*t),Math.cos(m2*t)]);}
+  return {pts,m1,m2};
+}
+let THREAD=threadPts();
+
+function draw(){
+  const w=cv.clientWidth,h=cv.clientHeight,R=Math.min(w,h)*0.42,cx=w/2,cy=h/2;
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--grid');
+  ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.stroke();
+  // поле
+  const proj_pts=PTS.map(p=>{const q=proj(p);return [cx+R*q[0],cy-R*q[1],q[2],p[3]];})
+                    .sort((a,b)=>a[2]-b[2]);
+  for(const s of proj_pts){const front=(s[2]+1)/2; const v=s[3];
+    const col=v>=0? '242,169,59' : '91,185,174';
+    ctx.globalAlpha=Math.min(1,Math.abs(v)*1.3)*(0.25+0.75*front);
+    ctx.fillStyle='rgb('+col+')';
+    const rad=1.2+2.2*Math.abs(v)*front;
+    ctx.beginPath();ctx.arc(s[0],s[1],rad,0,7);ctx.fill();}
+  ctx.globalAlpha=1;
+  // узловые линии
+  if(showNodes){
+    ctx.strokeStyle='rgba(255,255,255,0.55)';ctx.lineWidth=1.4;
+    for(const th of NODE_LATS){ctx.beginPath();let started=false;
+      for(let j=0;j<=120;j++){const ph=2*Math.PI*j/120;
+        const q=proj([Math.sin(th)*Math.cos(ph),Math.sin(th)*Math.sin(ph),Math.cos(th)]);
+        const X=cx+R*q[0],Y=cy-R*q[1]; if(q[2]>-0.02){started?ctx.lineTo(X,Y):ctx.moveTo(X,Y);started=true;}else started=false;}
+      ctx.stroke();}
+    for(const ph of NODE_LONS){ctx.beginPath();let started=false;
+      for(let i=0;i<=120;i++){const th=Math.PI*i/120;
+        const q=proj([Math.sin(th)*Math.cos(ph),Math.sin(th)*Math.sin(ph),Math.cos(th)]);
+        const X=cx+R*q[0],Y=cy-R*q[1]; if(q[2]>-0.02){started?ctx.lineTo(X,Y):ctx.moveTo(X,Y);started=true;}else started=false;}
+      ctx.stroke();}
+  }
+  // нить Erb
+  if(showThread){ctx.strokeStyle='rgba(255,201,106,0.9)';ctx.lineWidth=1.3;ctx.beginPath();
+    let started=false;
+    for(const p of THREAD.pts){const q=proj(p);const X=cx+R*q[0],Y=cy-R*q[1];
+      if(q[2]>-0.05){started?ctx.lineTo(X,Y):ctx.moveTo(X,Y);started=true;}else started=false;}
+    ctx.stroke();}
+  if(spinning&&!dragging)spin+=0.005;
+  requestAnimationFrame(draw);
+}
+
+function orbitalName(){const let_=["s","p","d","f","g","h"][l]||("l"+l);return n+let_;}
+function refresh(){
+  l=Math.max(0,Math.min(n-1,l)); m=Math.max(-l,Math.min(l,m));
+  document.getElementById("vn").textContent=n;
+  document.getElementById("vl").textContent=l;
+  document.getElementById("vm").textContent=m;
+  document.getElementById("nm").textContent=orbitalName()+(m?("  m="+m):"");
+  buildField(); buildNodes(); THREAD=threadPts();
+  const rad=n-l-1, lat=l-Math.abs(m), lon=Math.abs(m);
+  document.getElementById("read").innerHTML=
+    `орбиталь <b>${orbitalName()}</b> · |n,ℓ,m⟩ = |${n},${l},${m}⟩<br>`+
+    `радиальных оболочек: <b>${rad}</b>  (= n−ℓ−1)<br>`+
+    `узлов по широте: <b>${lat}</b>  (= ℓ−|m|)<br>`+
+    `узлов по долготе: <span class="t">${lon}</span>  (= |m|, магнитное число)<br>`+
+    `угловых всего: <b>${l}</b> · всего узлов: <b>${n-1}</b><br>`+
+    `нить-выборка Erb: m₁(долгота)=${THREAD.m1}, m₂(широта)=${THREAD.m2}, узлов=(m₁−1)m₂+2=${(THREAD.m1-1)*THREAD.m2+2}`;
+}
+document.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{
+  const q=b.dataset.q,d=+b.dataset.d;
+  if(q==="n")n=Math.max(1,Math.min(7,n+d));
+  if(q==="l")l=l+d;
+  if(q==="m")m=m+d;
+  refresh();});
+document.getElementById("tNodes").onclick=function(){showNodes=!showNodes;this.classList.toggle("on",showNodes);};
+document.getElementById("tThread").onclick=function(){showThread=!showThread;this.classList.toggle("on",showThread);};
+document.getElementById("tSpin").onclick=function(){spinning=!spinning;this.classList.toggle("on",spinning);};
+cv.addEventListener("pointerdown",e=>{dragging=true;px=e.clientX;py=e.clientY;cv.setPointerCapture(e.pointerId);});
+cv.addEventListener("pointermove",e=>{if(!dragging)return;spin+=(e.clientX-px)*0.01;
+  tilt=Math.max(-1.5,Math.min(1.5,tilt+(e.clientY-py)*0.01));px=e.clientX;py=e.clientY;});
+cv.addEventListener("pointerup",()=>dragging=false);
+resize(); refresh(); draw();
+</script>
+</body></html>
