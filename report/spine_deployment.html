@@ -1,0 +1,121 @@
+<!DOCTYPE html><html lang="ru"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Спина · развёртка из тетраэдра</title>
+<style>
+  :root{--bg:#0a0d14;--panel:#141a26;--edge:#26324a;--amber:#ffc14d;--amber-hi:#ffd98a;--cyan:#5cc8ff;--gold:#ffd98a;--dim:#8a93a8;--text:#e8ecf5;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .wrap{max-width:600px;margin:0 auto;padding:14px}
+  h1{font-size:15px;margin:0 0 8px;font-weight:600}
+  .scope{position:relative;width:100%;aspect-ratio:1/1;border:1px solid var(--edge);border-radius:10px;
+    background:radial-gradient(ellipse at 50% 45%,#111725 0%,#0a0d14 82%);overflow:hidden}
+  canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+  .cap{position:absolute;left:12px;top:10px;right:12px;font-family:ui-monospace,monospace;font-size:12.5px;pointer-events:none}
+  .cap .n{font-size:22px;font-weight:700;color:var(--amber-hi)}
+  .cap .k{color:var(--dim)}
+  .steps{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+  .steps button{flex:1;min-width:40px;padding:9px 4px;border:1px solid var(--edge);background:var(--panel);color:var(--text);
+    border-radius:8px;font-size:13px;font-family:ui-monospace,monospace;cursor:pointer}
+  .steps button.on{border-color:var(--amber);color:var(--amber-hi);box-shadow:0 0 0 1px var(--amber) inset}
+  .steps button.view.on{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset}
+  .desc{margin-top:10px;font-size:13.5px;line-height:1.6;border-left:2px solid var(--edge);padding-left:12px}
+  .desc b{color:var(--amber-hi)} .desc .v{color:var(--cyan)}
+  .foot{margin-top:10px;font-size:11.5px;color:var(--dim);line-height:1.5}
+</style></head><body>
+<div class="wrap">
+  <h1>Спина — одна развёртка из тетраэдра</h1>
+  <div class="scope"><canvas id="cv"></canvas>
+    <div class="cap"><span class="n" id="capn">1</span> <span id="capt"></span><br><span class="k" id="capk"></span></div>
+  </div>
+  <div class="steps" id="steps"></div>
+  <div class="desc" id="desc"></div>
+  <p class="foot">Шаги 1–6 = каркас (геометрия/физика, проверяемо). 7–8 = виды (образы). Крути пальцем.</p>
+</div>
+
+<script>
+const PHI=(1+Math.sqrt(5))/2, R=Math.sqrt(3);
+// вершины
+const T1=[[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]];
+const T2=T1.map(v=>v.map(c=>-c));
+const CUBE=[]; for(const a of[-1,1])for(const b of[-1,1])for(const c of[-1,1])CUBE.push([a,b,c]);
+const GOLD=[]; for(const s1 of[-1,1])for(const s2 of[-1,1]){GOLD.push([0,s1/PHI,s2*PHI],[s1/PHI,s2*PHI,0],[s1*PHI,0,s2/PHI]);}
+const DODECA=CUBE.concat(GOLD);
+function edges(V,d2,tol){const e=[];for(let i=0;i<V.length;i++)for(let j=i+1;j<V.length;j++){
+  const dd=(V[i][0]-V[j][0])**2+(V[i][1]-V[j][1])**2+(V[i][2]-V[j][2])**2;
+  if(Math.abs(dd-d2)<tol)e.push([V[i],V[j]]);}return e;}
+const E_T1=edges(T1,8,.5), E_T2=edges(T2,8,.5), E_CUBE=edges(CUBE,4,.3), E_DOD=edges(DODECA,4/(PHI*PHI),.3);
+// нить (стоячая волна) на сфере R²=3
+const TH=[]; {const a=5,b=3,N=4000,TMAX=Math.PI*15; for(let i=0;i<=N;i++){const t=i/N*TMAX;
+  TH.push([R*Math.sin(b*t)*Math.cos(a*t), R*Math.sin(a*t), R*Math.cos(b*t)*Math.cos(a*t)]);}}
+// узлы экватора нити (5 пентагон, для метки)
+const NODES=[]; for(let i=0;i<5;i++){const l=(18+72*i)*Math.PI/180;NODES.push([R*Math.cos(l),0,R*Math.sin(l)]);}
+const POLES=[[0,R,0],[0,-R,0]];
+
+const STEPS=[
+  {t:"Тетраэдр — семя",k:"4 вершины, R²=3, нет центра симметрии",
+   d:"<b>Семя.</b> У тетраэдра нет центра симметрии → зеркало живёт в ЦЕНТРЕ, а не в фигуре.",view:false},
+  {t:"Центр-зеркало −I",k:"«спор рождает двоих», начало +/−",
+   d:"<b>−I в центре</b> рождает второй тетраэдр. Начало двойственности (+/−).",view:false},
+  {t:"Куб = часы-12",k:"тетра ∪ −I(тетра) = 8 вершин",
+   d:"<b>Куб</b> = дискретная рама = СОСТОЯНИЯ (кристалл, замыкается). Здесь часы-12, mod-3, n².",view:false},
+  {t:"Додекаэдр = авоська-10",k:"+12 золотых, φ входит, R²=3",
+   d:"<b>Додекаэдр</b> = золотая рама = ПЕРЕХОДЫ (квазикристалл, φ, не замыкается). Здесь авоська-10, φ-оператор.",view:false},
+  {t:"Ось = два полюса-ручки",k:"рождение / смерть, «не трогаем»",
+   d:"<b>Ось</b> рамы = 2 полюса-ручки = рождение/смерть. Проекция на ось = «тень» (в водороде m).",view:false},
+  {t:"Нить = стоячая волна",k:"узлы = переходы = память; = орбиталь водорода",
+   d:"<b>Нить</b> вьётся по раме, самопересекается в узлах = операторах перехода = памяти (φ−1 не рвётся). Узлы нити = узлы орбитали водорода точно.",view:false},
+  {t:"Проход = жизнь = буквы",k:"вид: А→Щ, цикл 10 операторов",
+   d:"<span class='v'>Вид.</span> Движение по нити от полюса до полюса = жизнь: буквы А→Щ, замкнутый цикл 10 операторов (Любовь→…→Память→L′).",view:true},
+  {t:"Вход в цикл = число",k:"вид: 15/23, сдвиг в 22-цикле = «личность»",
+   d:"<span class='v'>Вид.</span> «Личность» = точка входа (offset) в один 22-цикл (15/23). Серединный узелок — числа, не полюс.",view:true},
+];
+let step=1, spin=0.5, tilt=0.4, dragging=false, px=0,py=0;
+const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
+function resize(){const r=cv.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);
+  cv.width=r.width*dpr;cv.height=r.height*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);}
+addEventListener("resize",resize);
+function proj(p){let x=p[0]*Math.cos(spin)+p[2]*Math.sin(spin);
+  let z=-p[0]*Math.sin(spin)+p[2]*Math.cos(spin),y=p[1];
+  let y2=y*Math.cos(tilt)-z*Math.sin(tilt),z2=y*Math.sin(tilt)+z*Math.cos(tilt);return [x,y2,z2];}
+function scr(p){const w=cv.clientWidth,h=cv.clientHeight,S=Math.min(w,h)*0.20,cx=w/2,cy=h/2;
+  const q=proj(p);return [cx+S*q[0],cy-S*q[1],q[2]];}
+function line(a,b,col,al,lw){const A=scr(a),B=scr(b);const d=(A[2]+B[2])/2;
+  ctx.strokeStyle=col;ctx.globalAlpha=al*(0.35+0.65*(d+2)/4);ctx.lineWidth=lw||1.4;
+  ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.stroke();ctx.globalAlpha=1;}
+function dot(p,col,r){const s=scr(p);ctx.fillStyle=col;ctx.globalAlpha=s[2]>=0?1:.5;
+  ctx.beginPath();ctx.arc(s[0],s[1],r,0,7);ctx.fill();ctx.globalAlpha=1;}
+function draw(){
+  ctx.clearRect(0,0,cv.clientWidth,cv.clientHeight);
+  const s=step;
+  if(s>=1){for(const e of E_T1)line(e[0],e[1],"#ffd98a",0.9,1.6);T1.forEach(v=>dot(v,"#ffd98a",4));}
+  if(s>=2){for(const e of E_T2)line(e[0],e[1],"#8a93a8",0.5,1.2);T2.forEach(v=>dot(v,"#8a93a8",3));
+    dot([0,0,0],"#fff",4);}
+  if(s>=3){for(const e of E_CUBE)line(e[0],e[1],"#5cc8ff",0.7,1.3);CUBE.forEach(v=>dot(v,"#5cc8ff",3.5));}
+  if(s>=4){for(const e of E_DOD)line(e[0],e[1],"#ffc14d",0.5,1);GOLD.forEach(v=>dot(v,"#ffc14d",3.5));}
+  if(s>=5){for(const p of POLES){dot(p,"#fff",6);}line([0,R,0],[0,-R,0],"#ffffff",0.35,1);}
+  if(s>=6){for(let i=0;i<TH.length-1;i++){const a=scr(TH[i]),b=scr(TH[i+1]);const d=(a[2]+b[2])/2;
+    ctx.strokeStyle="#ffe0a0";ctx.globalAlpha=0.5+0.5*(d+2)/4;ctx.lineWidth=1.4;
+    ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();}ctx.globalAlpha=1;
+    NODES.forEach(v=>dot(v,"#ff6b6b",4.5));}
+  if(!dragging)spin+=0.004;
+  requestAnimationFrame(draw);
+}
+function setStep(n){step=n;
+  document.querySelectorAll("#steps button").forEach((b,i)=>{b.classList.toggle("on",i+1<=n);
+    b.classList.toggle("view",STEPS[i].view);});
+  const S=STEPS[n-1];
+  document.getElementById("capn").textContent=n;
+  document.getElementById("capt").textContent=S.t;
+  document.getElementById("capk").textContent=S.k;
+  document.getElementById("desc").innerHTML=S.d;
+}
+const box=document.getElementById("steps");
+STEPS.forEach((S,i)=>{const b=document.createElement("button");b.textContent=(i+1);
+  b.onclick=()=>setStep(i+1);box.appendChild(b);});
+cv.addEventListener("pointerdown",e=>{dragging=true;px=e.clientX;py=e.clientY;cv.setPointerCapture(e.pointerId);});
+cv.addEventListener("pointermove",e=>{if(!dragging)return;spin+=(e.clientX-px)*0.01;
+  tilt=Math.max(-1.5,Math.min(1.5,tilt+(e.clientY-py)*0.01));px=e.clientX;py=e.clientY;});
+cv.addEventListener("pointerup",()=>dragging=false);
+resize();setStep(1);draw();
+</script>
+</body></html>
