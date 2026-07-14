@@ -1,0 +1,90 @@
+<!DOCTYPE html><html lang="ru"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Число → функция · развёртка</title>
+<style>
+  :root{--bg:#15120E;--panel:#1E1A14;--edge:#332A1E;--amber:#F2A93B;--amber-hi:#FFC96A;--cyan:#5BB9AE;--text:#D9CFBE;--dim:#8A7E6B;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .wrap{max-width:560px;margin:0 auto;padding:16px 14px 40px}
+  h1{font-size:15px;margin:0 0 2px;font-weight:600}
+  .sub{font-size:12px;color:var(--dim);margin:0 0 14px;line-height:1.5}
+  .nums{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+  .nums button{width:42px;height:44px;border:1px solid var(--edge);background:var(--panel);color:var(--text);
+    border-radius:9px;font-size:18px;font-family:ui-monospace,monospace;cursor:pointer}
+  .nums button.on{border-color:var(--amber);color:var(--amber-hi);box-shadow:0 0 0 1px var(--amber) inset}
+  .nums button small{display:block;font-size:9px;color:var(--dim)}
+  .card{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:start}
+  @media(max-width:420px){.card{grid-template-columns:1fr}}
+  .plot{border:1px solid var(--edge);border-radius:10px;background:#120F0A;aspect-ratio:1/1;width:100%}
+  .kv{font-size:13.5px;line-height:1.75}
+  .kv b{color:var(--amber-hi)} .kv .c{color:var(--cyan)}
+  .lab{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;margin-top:8px}
+  .alg{margin-top:12px;padding:9px 11px;border-left:2px solid var(--edge);font-size:12.5px;color:var(--dim);line-height:1.5}
+</style></head><body>
+<div class="wrap">
+  <h1>Число → функция (число раскрывает многообразие)</h1>
+  <p class="sub">Функция числа k = <b style="color:var(--amber-hi)">развёртка катастрофы A_k</b> (потенциал V=x^{k+1}) = <b style="color:var(--cyan)">мультиплет водорода 2ℓ+1</b>. Универсально во всех фазовых переходах.</p>
+
+  <div class="nums" id="nums"></div>
+  <div class="card">
+    <canvas class="plot" id="plot" width="300" height="300"></canvas>
+    <div>
+      <div class="kv" id="kv"></div>
+      <div class="alg" id="alg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA={
+ 0:{fam:0,cat:"A₁ — устойчивый минимум (без катастрофы)",pot:"x²",codim:0,l:0,typ:"s",alg:"вакуум/центр, «не родился/умер»; единица группы"},
+ 1:{fam:1,cat:"A₂ — СКЛАДКА (fold)",pot:"x³",codim:1,l:1,typ:"p",alg:"рождение, стрела"},
+ 2:{fam:2,cat:"A₃ — СБОРКА (cusp)",pot:"x⁴",codim:2,l:2,typ:"d",alg:"фундамент, двойственность"},
+ 3:{fam:0,cat:"A₄ — ЛАСТОЧКИН ХВОСТ",pot:"x⁵",codim:3,l:3,typ:"f",alg:"два мира (чувств/разум); ядро семьи"},
+ 4:{fam:1,cat:"A₅ — БАБОЧКА",pot:"x⁶",codim:4,l:4,typ:"g",alg:"взаимодействие с миром"},
+ 5:{fam:2,cat:"A₆",pot:"x⁷",codim:5,l:5,typ:"h",alg:"цена себе, острие вверх"},
+ 6:{fam:0,cat:"A₇",pot:"x⁸",codim:6,l:6,typ:"i",alg:"законченный круг, разум; ядро семьи"},
+ 7:{fam:1,cat:"A₈",pot:"x⁹",codim:7,l:7,typ:"k",alg:"сомнение, разрыв"},
+ 8:{fam:2,cat:"A₉",pot:"x¹⁰",codim:8,l:8,typ:"l",alg:"два круга, зрелость"},
+};
+const FAM={0:"{3,6,9} ядро (замыкается)",1:"{1,4,7} класс +1 (переход)",2:"{2,5,8} класс +2 (переход)"};
+let sel=3;
+const plot=document.getElementById("plot"), px=plot.getContext("2d");
+function draw(k){
+  const w=plot.width,h=plot.height,pad=18;
+  px.clearRect(0,0,w,h);
+  px.strokeStyle="#332A1E";px.lineWidth=1;
+  px.beginPath();px.moveTo(w/2,pad);px.lineTo(w/2,h-pad);px.moveTo(pad,h/2);px.lineTo(w-pad,h/2);px.stroke();
+  // V = x^(k+1), нормируем
+  const p=k+1; const X=x=>w/2+(x*0.45)*(w-2*pad)/1.5*1.5/1.5; // simple scale
+  px.strokeStyle="#F2A93B";px.lineWidth=2.2;px.beginPath();
+  let first=true;
+  for(let i=0;i<=240;i++){const x=-1.5+3*i/240; let v=Math.pow(Math.abs(x),p)*(x<0&&p%2? -1:1);
+    // для наглядности: чётная степень — чаша, нечётная — перегиб
+    v=Math.pow(x,p);
+    const sx=w/2+ (x/1.6)*(w/2-pad);
+    const sy=h/2- (v/Math.pow(1.6,p))*(h/2-pad)*0.9;
+    if(sy<pad||sy>h-pad){first=true;continue;}
+    first?(px.moveTo(sx,sy),first=false):px.lineTo(sx,sy);}
+  px.stroke();
+  px.fillStyle="#8A7E6B";px.font="12px ui-monospace";px.fillText("V = "+DATA[k].pot, pad, h-6);
+}
+function render(){
+  const d=DATA[sel];
+  document.querySelectorAll("#nums button").forEach((b,i)=>b.classList.toggle("on",i===sel));
+  document.getElementById("kv").innerHTML=
+    `число <b>${sel}</b> · семья <b>${FAM[d.fam]}</b><br>`+
+    `<span class="lab">функция = развёртка</span>`+
+    `катастрофа: <b>${d.cat}</b><br>потенциал V=<b>${d.pot}</b>, коразмерность (размер многообразия) = <b>${d.codim}</b><br>`+
+    `<span class="lab">на водороде</span>`+
+    `ℓ=${d.l} (<span class="c">${d.typ}</span>): мультиплет <span class="c">${2*d.l+1}</span> состояний, узлов <span class="c">${d.l}</span><br>`+
+    `корень из единицы: e^{2πi·${sel}/9}`;
+  document.getElementById("alg").innerHTML="аллегория (вид): "+d.alg;
+  draw(sel);
+}
+const nb=document.getElementById("nums");
+for(let k=0;k<=8;k++){const b=document.createElement("button");
+  b.innerHTML=k+"<small>"+DATA[k].typ+"</small>";b.onclick=()=>{sel=k;render();};nb.appendChild(b);}
+render();
+</script>
+</body></html>
